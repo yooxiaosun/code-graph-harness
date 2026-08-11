@@ -1,0 +1,94 @@
+# 代码知识图谱 — Git 仓库配置
+# 每个仓库将被克隆、扫描，提取 RPC 接口和调用关系
+#
+# 字段说明:
+#   url:       Git 仓库地址（支持 HTTPS 和 SSH）
+#   branch:    要分析的分支
+#   module:    Maven 模块限定，为空则分析整个仓库
+#   protocols: 关注的协议类型，用于过滤提取范围
+#   enabled:   是否参与分析
+
+repos:
+
+settings:
+  work_dir: "./output/repos"
+  use_cache: true
+  max_depth: 1
+  java_home: ""
+  mvn_home: ""
+
+protocols:
+  dubbo:
+    annotations:
+      provider: ["com.alibaba.dubbo.config.annotation.Service", "org.apache.dubbo.config.annotation.DubboService", "org.apache.dubbo.config.annotation.Service"]
+      consumer: ["com.alibaba.dubbo.config.annotation.Reference", "org.apache.dubbo.config.annotation.DubboReference", "org.apache.dubbo.config.annotation.Reference"]
+    config_files: ["dubbo-provider.xml", "dubbo-consumer.xml", "dubbo.xml", "applicationContext*.xml"]
+  sofarpc:
+    annotations:
+      provider: ["com.alipay.sofa.rpc.api.GenericService", "com.alipay.sofa.runtime.api.annotation.SofaService", "com.alipay.sofa.runtime.api.annotation.SofaServiceBinding"]
+      consumer: ["com.alipay.sofa.runtime.api.annotation.SofaReference", "com.alipay.sofa.runtime.api.annotation.SofaReferenceBinding"]
+    config_files: ["*sofarpc*.xml", "*sofa-rpc*.xml"]
+  grpc:
+    annotations:
+      provider: ["io.grpc.BindableService", "io.grpc.stub.StreamObserver"]
+      consumer: ["io.grpc.ManagedChannel", "io.grpc.stub.AbstractBlockingStub", "io.grpc.stub.AbstractFutureStub", "io.grpc.stub.AbstractStub"]
+    proto_patterns: ["src/main/proto/**/*.proto", "src/main/resources/proto/**/*.proto"]
+  rest:
+    annotations:
+      provider: ["org.springframework.web.bind.annotation.RestController", "org.springframework.web.bind.annotation.RequestMapping", "org.springframework.web.bind.annotation.GetMapping", "org.springframework.web.bind.annotation.PostMapping", "org.springframework.web.bind.annotation.PutMapping", "org.springframework.web.bind.annotation.DeleteMapping", "org.springframework.web.bind.annotation.PatchMapping", "javax.ws.rs.Path", "jakarta.ws.rs.Path"]
+      consumer: ["org.springframework.cloud.openfeign.FeignClient"]
+      http_client: ["org.springframework.web.client.RestTemplate", "okhttp3.OkHttpClient", "org.apache.http.client.HttpClient", "org.springframework.web.reactive.function.client.WebClient"]
+
+nonstandard:
+  enabled: true
+  scanners:
+    - name: http-client
+      description: "RestTemplate/OkHttp/Apache HttpClient HTTP 调用"
+      class_patterns:
+        - "org.springframework.web.client.RestTemplate"
+        - "okhttp3.OkHttpClient"
+        - "org.apache.http.client.HttpClient"
+        - "org.springframework.web.reactive.function.client.WebClient"
+      method_patterns: ["execute", "getForObject", "postForObject", "exchange", "newCall"]
+    - name: mq
+      description: "Kafka/RabbitMQ/RocketMQ 消息队列交互"
+      class_patterns:
+        - "org.apache.kafka.clients.producer.KafkaProducer"
+        - "org.apache.kafka.clients.consumer.KafkaConsumer"
+        - "com.rabbitmq.client.Channel"
+        - "org.apache.rocketmq.client.producer.DefaultMQProducer"
+        - "org.apache.rocketmq.client.consumer.DefaultMQPushConsumer"
+      method_patterns: ["send", "publish", "basicPublish", "basicConsume"]
+    - name: custom-socket
+      description: "Netty/Custom Socket 自定义通信协议"
+      class_patterns:
+        - "io.netty.channel.Channel"
+        - "io.netty.bootstrap.ServerBootstrap"
+        - "io.netty.bootstrap.Bootstrap"
+        - "java.net.Socket"
+        - "java.nio.channels.SocketChannel"
+      method_patterns: ["connect", "bind", "writeAndFlush", "read"]
+
+business_tags:
+  enabled: true
+  sources:
+    custom_annotations: true
+    package_names: true
+    javadoc: true
+    method_names: true
+    config_files: true
+  annotation_prefixes:
+    - "com.*.annotation.*"
+    - "com.*.annotations.*"
+    - "com.*.tag.*"
+  package_domain_mapping:
+    order: "order-domain"
+    trade: "order-domain"
+    user: "user-domain"
+    account: "user-domain"
+    inventory: "inventory-domain"
+    stock: "inventory-domain"
+    payment: "payment-domain"
+    pay: "payment-domain"
+    logistics: "logistics-domain"
+    delivery: "logistics-domain"

@@ -1,0 +1,12 @@
+# 任务级状态机模板 — 复制为 docs/changes/<任务编号>/state.yaml 后填写
+# 字段规范见 harness-conf/workflow/state-maintenance.md §3
+change-id: EXT-YYYYMMDD-NN              # 任务编号（与目录名一致）
+change-level: quick                     # quick / standard（E4 触发自动升级 standard）
+extraction-mode: full                   # full / incremental / single-repo / nightly
+execution-mode: interactive             # interactive / nightly
+current-phase: E1                       # E1-E5 / ARCHIVED
+gate-status: pending                    # pending / passed / rejected / exempted
+adaptation-round: 0                     # E4 迭代轮次（上限 3）
+escalations: []                         # 升级 User 事件记录
+started-at: YYYY-MM-DDTHH:MM:SSZ
+completed-at: null

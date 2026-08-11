@@ -1,0 +1,143 @@
+{
+  "version": "1.0",
+  "generatedAt": "2026-07-06T08:36:25.252Z",
+  "project": {
+    "name": "Code Graph Harness",
+    "type": "shell",
+    "stack": "python",
+    "techStack": [
+      "TypeScript",
+      "Node.js",
+      "Python",
+      "React",
+      "Docker"
+    ]
+  },
+  "agent": {
+    "id": "claude-code",
+    "supportLevel": "full",
+    "configType": "claude-code",
+    "capability": {
+      "supportLevel": "full",
+      "memoryFiles": [
+        "CLAUDE.md"
+      ],
+      "configFiles": [
+        ".opencode/opencode.json"
+      ],
+      "supportsHooks": true,
+      "supportsMcp": true,
+      "supportsPermissions": true,
+      "supportsSkills": true,
+      "supportsStopHook": true
+    }
+  },
+  "workflow": {
+    "scenarioMode": "sandbox",
+    "enableTDD": false,
+    "enableHooks": false,
+    "enableMCP": true,
+    "enableKnowledgeDoc": false
+  },
+  "skills": {
+    "selected": [
+      "karpathy-guidelines",
+      "openspace-evolve",
+      "harness-engineering",
+      "scale-skill-radar",
+      "office-hours",
+      "autoplan",
+      "ce-brainstorm",
+      "writing-plans",
+      "vibe-coding-workflow",
+      "ecc-planner",
+      "ecc-architect",
+      "speckit-specify",
+      "speckit-plan",
+      "openspec-propose",
+      "scale-methodology",
+      "autopilot",
+      "ralph",
+      "ultraqa",
+      "ce-compound",
+      "systematic-debugging",
+      "investigate",
+      "cso",
+      "qa",
+      "ship",
+      "land-and-deploy",
+      "canary",
+      "benchmark",
+      "mcp-sentry",
+      "mcp-docker",
+      "mcp-slack",
+      "mcp-github",
+      "mcp-postgres",
+      "cli-gh",
+      "cli-aws",
+      "cli-sentry",
+      "mcp-sequential-thinking"
+    ],
+    "supported": [
+      "systematic-debugging",
+      "karpathy-guidelines",
+      "openspace-evolve",
+      "harness-engineering",
+      "office-hours",
+      "autoplan",
+      "ce-brainstorm",
+      "writing-plans",
+      "vibe-coding-workflow",
+      "autopilot",
+      "ralph",
+      "ultraqa",
+      "qa",
+      "investigate",
+      "cso",
+      "ce-compound",
+      "ship",
+      "land-and-deploy",
+      "canary",
+      "benchmark",
+      "ecc-planner",
+      "ecc-architect",
+      "speckit-specify",
+      "speckit-plan",
+      "openspec-propose",
+      "scale-methodology",
+      "mcp-sequential-thinking",
+      "mcp-github",
+      "mcp-sentry",
+      "mcp-slack",
+      "mcp-postgres",
+      "mcp-docker",
+      "cli-gh",
+      "cli-aws",
+      "cli-sentry",
+      "scale-skill-radar"
+    ],
+    "unsupported": []
+  },
+  "mustRun": [
+    "bash scripts/validate-config.sh",
+    "bash scripts/tests/run.sh",
+    "bash scripts/gates/all.sh --dry-run",
+    "bash scripts/workflow/verify.sh default"
+  ],
+  "qualityGovernance": {
+    "contract": "harness-conf/workflow/gate-criteria.md",
+    "templates": [
+      "docs/workflow/templates/mini-prd.md",
+      "docs/workflow/templates/task-summary.md",
+      "docs/workflow/templates/vibe-prompts.md",
+      "docs/workflow/templates/resource-governance.md",
+      "docs/standards/ENGINEERING_RULES.md"
+    ],
+    "rule": "Rules in agent docs are advisory unless backed by commands, gates, templates, or explicit evidence requirements."
+  },
+  "honestyRules": [
+    "Do not claim tests passed unless the command was actually run and exited 0.",
+    "Dry-run does not prove quality gates passed.",
+    "Skipped or missing tools must be listed as unverified items."
+  ]
+}

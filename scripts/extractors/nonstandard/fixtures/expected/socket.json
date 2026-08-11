@@ -1,0 +1,3 @@
+[
+  {"id": "test-service::com.example.NettyServer.socket", "type": "interface", "name": "netty-server", "parent": "test-service", "protocol": "socket", "role": "provider", "className": "com.example.NettyServer", "signature": "", "path": "", "httpMethod": "", "httpPath": "", "tags": []}
+]

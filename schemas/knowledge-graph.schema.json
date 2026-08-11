@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://code-graph/knowledge-graph.schema.json",
+  "title": "Code Graph Knowledge Graph",
+  "description": "分布式服务接口定义与调用关系知识图谱",
+  "type": "object",
+  "required": ["version", "generatedAt", "nodes", "edges"],
+  "properties": {
+    "version": {"type": "string", "default": "1.0"},
+    "generatedAt": {"type": "string", "format": "date-time"},
+    "stats": {"$ref": "#/$defs/Stats"},
+    "nodes": {
+      "type": "array",
+      "items": {"oneOf": [{"$ref": "#/$defs/ServiceNode"}, {"$ref": "#/$defs/InterfaceNode"}]}
+    },
+    "edges": {
+      "type": "array",
+      "items": {"oneOf": [{"$ref": "#/$defs/RpcEdge"}, {"$ref": "#/$defs/NonstandardEdge"}]}
+    }
+  },
+  "$defs": {
+    "Stats": {
+      "type": "object",
+      "properties": {
+        "totalServices": {"type": "integer"},
+        "totalInterfaces": {"type": "integer"},
+        "totalEdges": {"type": "integer"},
+        "byProtocol": {"type": "object", "properties": {"dubbo": {"type": "integer"}, "sofarpc": {"type": "integer"}, "grpc": {"type": "integer"}, "rest": {"type": "integer"}, "nonstandard": {"type": "integer"}}}
+      }
+    },
+    "ServiceNode": {
+      "type": "object",
+      "required": ["id", "type", "name"],
+      "properties": {
+        "id": {"type": "string", "description": "唯一标识: {service-name}"},
+        "type": {"type": "string", "const": "service"},
+        "name": {"type": "string", "description": "服务名称"},
+        "repo": {"type": "string"},
+        "branch": {"type": "string"},
+        "buildTool": {"type": "string", "enum": ["maven", "gradle", "unknown"]},
+        "tags": {"type": "array", "items": {"type": "string"}, "description": "业务标签"},
+        "metadata": {"type": "object", "properties": {"framework": {"type": "string"}, "javaVersion": {"type": "string"}, "port": {"type": "integer"}}}
+      }
+    },
+    "InterfaceNode": {
+      "type": "object",
+      "required": ["id", "type", "name", "parent", "protocol", "role"],
+      "properties": {
+        "id": {"type": "string", "description": "{parent}::{className}.{methodName}"},
+        "type": {"type": "string", "const": "interface"},
+        "name": {"type": "string", "description": "方法名"},
+        "parent": {"type": "string", "description": "所属服务节点 id"},
+        "protocol": {"type": "string", "enum": ["dubbo", "sofarpc", "grpc", "rest", "http", "mq", "socket", "custom"]},
+        "role": {"type": "string", "enum": ["provider", "consumer"]},
+        "className": {"type": "string", "description": "完整类名"},
+        "signature": {"type": "string", "description": "方法签名"},
+        "path": {"type": "string", "description": "源码相对路径:行号"},
+        "httpMethod": {"type": "string", "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"]},
+        "httpPath": {"type": "string", "description": "HTTP 路径"},
+        "tags": {"type": "array", "items": {"type": "string"}, "description": "业务标签"},
+        "metadata": {"type": "object", "properties": {"isDeprecated": {"type": "boolean"}, "version": {"type": "string"}, "timeout": {"type": "integer"}, "retries": {"type": "integer"}, "serialization": {"type": "string"}}}
+      }
+    },
+    "RpcEdge": {
+      "type": "object",
+      "required": ["from", "to", "type", "protocol"],
+      "properties": {
+        "from": {"type": "string", "description": "调用方接口节点 id"},
+        "to": {"type": "string", "description": "被调用方接口节点 id"},
+        "type": {"type": "string", "const": "rpc_call"},
+        "protocol": {"type": "string", "enum": ["dubbo", "sofarpc", "grpc", "rest"]},
+        "fromService": {"type": "string"},
+        "toService": {"type": "string"},
+        "metadata": {"type": "object", "properties": {"synchronous": {"type": "boolean"}, "sourcePath": {"type": "string"}}}
+      }
+    },
+    "NonstandardEdge": {
+      "type": "object",
+      "required": ["from", "to", "type", "protocol", "confidence"],
+      "properties": {
+        "from": {"type": "string"},
+        "to": {"type": "string"},
+        "type": {"type": "string", "const": "nonstandard_call"},
+        "protocol": {"type": "string", "enum": ["http", "mq", "socket", "custom"]},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "fromService": {"type": "string"},
+        "toService": {"type": "string"},
+        "pattern": {"type": "string", "description": "匹配到的代码模式描述"},
+        "sourcePath": {"type": "string", "description": "源码调用位置"},
+        "metadata": {"type": "object", "properties": {"topic": {"type": "string"}, "hostPattern": {"type": "string"}}}
+      }
+    }
+  }
+}

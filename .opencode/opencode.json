@@ -1,0 +1,90 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  "instructions": [
+    "CLAUDE.md",
+    "harness-conf/INDEX.md",
+    "harness-conf/ARCHITECTURE.md"
+  ],
+
+  "skills": {
+    "paths": [
+      ".opencode/skills"
+    ]
+  },
+
+  "permission": {
+    "bash": {
+      "bash scripts/*": "allow",
+      "bash scripts/gates/*": "allow",
+      "bash scripts/tests/*": "allow",
+      "git clone *": "allow",
+      "git pull *": "allow",
+      "git checkout *": "allow",
+      "ls *": "allow",
+      "find *": "allow",
+      "grep *": "allow",
+      "mkdir *": "allow",
+      "*": "ask"
+    },
+    "edit": {
+      "docs/status/state.yaml": "allow",
+      "docs/status/progress.md": "allow",
+      "docs/changes/**/state.yaml": "allow",
+      "docs/changes/**/progress.md": "allow",
+      "docs/changes/**/artifacts/**": "allow",
+      "docs/specs/**": "allow",
+      "docs/standards/**": "allow",
+      "docs/workflow/**": "allow",
+      "scripts/**": "allow",
+      "repos.yaml": "allow",
+      ".harness/patterns/**": "allow",
+      "harness-conf/**": "allow",
+      "EXTRACTION-WORKFLOW.md": "allow",
+      "*": "ask"
+    },
+    "read": {
+      "*": "allow"
+    }
+  },
+
+  "agent": {
+    "adapter-developer": {
+      "description": "E4 自适应编码：仅能在 .harness/staging/ 产出交付包，三道防线（权限收束 + 自证 + 晋级闸门）",
+      "permission": {
+        "bash": {
+          "bash scripts/extractors/nonstandard/verify/*": "allow",
+          "bash scripts/tests/run.sh": "allow",
+          "bash scripts/e4-verify-bundle.sh *": "allow",
+          "bash -n *": "allow",
+          "bash scripts/promote-extractor.sh *": "deny",
+          "*": "deny"
+        },
+        "edit": {
+          ".harness/staging/**": "allow",
+          "docs/changes/**/artifacts/E4-adapt-report.md": "allow",
+          "*": "deny"
+        },
+        "read": {
+          "*": "allow"
+        }
+      }
+    },
+    "calibration-analyzer": {
+      "description": "E3 校准分析：严格只读数据产物，仅可写归因分析报告",
+      "permission": {
+        "bash": {
+          "*": "deny"
+        },
+        "edit": {
+          "docs/changes/**/artifacts/E3-calibration-analysis.md": "allow",
+          "output/nightly/**": "allow",
+          "*": "deny"
+        },
+        "read": {
+          "*": "allow"
+        }
+      }
+    }
+  }
+}
