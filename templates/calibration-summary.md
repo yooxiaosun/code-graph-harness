@@ -6,6 +6,10 @@
 
 > md-first 哲学：汇总的**指标定义与解读**在本模板（AI 判断），
 > 数据提取用 `scripts/base/run-ai-analysis.sh` 等机械工具。
+>
+> 关联模板：
+> - 前置：`templates/dual-dimension-merge.md`（消费其 output/nodes/ 合并结果）
+> - 异常：`templates/dual-pass-review.md` / `templates/low-conf-drill.md` / `templates/generate-human-review.md`
 
 ## Input
 - 脚本维度: `output/nodes-script/`（若存在）

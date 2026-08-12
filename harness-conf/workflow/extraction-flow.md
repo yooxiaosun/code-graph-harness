@@ -62,10 +62,11 @@ status: Baseline
 | 增量 | pipeline.sh + 变更检测（见 `EXTRACTION-WORKFLOW.md §6`） | 日常更新 |
 | 单仓库 | `build-nodes.sh <service> <path>` + 后续 layers | 调试 / 局部重提取 |
 
-**双维度提取（v2.1 新增，build-nodes.sh 自动）**：
+**双维度提取（v2.1 新增，v2.2 md-first 修正）**：
 - 脚本维度：`.harness/extractors/*/extract.sh` 机械基线 → `output/nodes-script/<svc>/`
 - AI 维度：AI 直产（`templates/analyze-framework.md` + `templates/dual-pass-review.md`）→ `output/nodes-ai/<svc>/`
-- 自动探测：`output/nodes-ai/<svc>/` 存在 → 双轨合并（`merge-dual.sh` 置信度分级 + 去重）→ `output/nodes/<svc>/`；否则单轨直写（向后兼容）
+- 调度决策：AI 按 `templates/build-nodes-scheduling.md` 决定 single/dual 模式与 --plan（build-nodes.sh 为纯参数化工具）
+- 双轨合并：AI 按 `templates/dual-dimension-merge.md` 合并 `nodes-script` + `nodes-ai` → `output/nodes/<svc>/`（置信度分级 + 去重 + 协议级加权）
 - 置信度：节点级印证（bash∩AI=high / 单方=medium）+ 协议级加权（profile high→+1 / none→-1）
 
 **交接块内容**：执行模式、任务编号、交付物路径要求、失败上报要求。

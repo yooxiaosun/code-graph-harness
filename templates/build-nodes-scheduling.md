@@ -5,6 +5,11 @@
 工作受 `templates/ai-analysis-harness.md` 约束。
 
 > md-first 哲学：调度**决策**在本模板（AI 判断），`build-nodes.sh` 是纯参数化执行工具（无判断）。
+>
+> 关联模板：
+> - 输入来源：`templates/analyze-framework.md`（D1 产出 profile.yaml）
+> - 前置校验：`scripts/gates/GE2.5-framework-analysis.sh`（G-E2.5 门禁）
+> - 后置：`templates/dual-dimension-merge.md`（双轨时合并）
 
 ## Input
 - `output/analysis/<service>-profile.yaml`（D1 框架分析产出，若存在）

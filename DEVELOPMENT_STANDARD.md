@@ -61,8 +61,18 @@
 | `base/run-ai-analysis.sh` | 提取 state.yaml 字段 | 机械读 YAML（**不含判断**） |
 | `graph/compute-stats.sh` | 算统计数 | 机械算术 |
 | `graph/assemble-graph.sh` | JSON 拼装 | 机械合并 |
+| `graph/build-nodes.sh` | 运行给定提取器（--plan 参数化） | 机械执行，无策略判断 |
+| `graph/build-edges.sh` | 提供者池匹配 + 边产出 | 机械匹配，数值评分映射为确定性规则 |
+| `graph/merge-graphs.sh` | 增量合并 | 机械文件操作 |
+| `pipeline.sh` | 阶段顺序编排骨架 | 机械顺序，无策略判断 |
+| `nightly.sh` | 无人值守批量入口 | 机械调度 + 基础设施可用性检查 |
 | `gates/GE*.sh / GP*.sh / G*.sh` | 门禁校验 | 确定性规则 |
+| `promote-extractor.sh / promote-sdk.sh` | E4 晋级闸门 | 确定性自证 + 防覆盖 |
 | `.harness/extractors/*/extract.sh` | 提取器基线 | 保留作为双轨对比基线 |
+
+> 上述编排类脚本（pipeline/nightly/build-nodes/build-edges）虽然控制流程，
+> 但**不含策略判断**——它们只执行显式传入的参数（--plan / 模式）或确定性映射规则。
+> 任何"该选 A 还是 B / 要不要回退 / 怎么加权"的决策都属于 md 层。
 
 ### §2.3 禁止区（不该存在的东西）
 

@@ -225,70 +225,78 @@ templates/persist-rule.md        → AI 归档   → rules + CHANGELOG
 
 ---
 
-## §6 目录结构
+## §6 目录结构（v2.2 刷新）
 
 ```
 harness/
 │
 ├── HARNESS.md                       # Agent 入口 + 硬约束
+├── DEVELOPMENT_STANDARD.md          # 开发规范（md-first 唯一真源）
 ├── SCALE-PROMPT.md                  # Agent 行为纪律
 ├── repos.yaml                       # 仓库 + 协议配置
 │
-├── templates/                       # ① 提示引导（人维护）
-│   ├── analyze-framework.md         # 框架分析（新）
-│   ├── analyze-pattern.md           # 模式分析
-│   ├── generate-script.md           # 代码生成
-│   └── persist-rule.md              # 规则持久化
+├── templates/                       # ① 提示引导 + 策略层（人维护 md，AI 读后自主执行）
+│   ├── analyze-framework.md         # D1 框架分析
+│   ├── build-nodes-scheduling.md    # Layer 1 调度决策（v2.2）
+│   ├── dual-dimension-merge.md      # 双维度合并规则（v2.2）
+│   ├── calibration-summary.md       # 校准汇总（v2.2）
+│   ├── ai-analysis-harness.md       # AI 迭代约束（收敛/Hard Cap/Bail-out）
+│   ├── dual-pass-review.md          # 双维度二轮校准
+│   ├── low-conf-drill.md            # 低置信度深挖
+│   ├── generate-human-review.md     # 人工确认包
+│   ├── analyze-pattern.md           # 模式分析（E4）
+│   ├── generate-script.md           # 代码生成（E4）
+│   └── persist-rule.md              # 规则持久化（E4）
 │
 ├── schemas/                         # ③ 产出格式标准（人维护）
 │   ├── knowledge-graph.schema.json  # 图谱 Schema
-│   └── profile.schema.yaml          # 框架分析格式（新）
+│   ├── profile.schema.yaml          # 框架分析格式（D1）
+│   ├── node.schema.json             # 节点契约（v2.1）
+│   └── edge.schema.json             # 边契约（v2.1）
 │
-├── scripts/                         # Bash 原子能力 + 图谱内核（人维护）
-│   ├── pipeline.sh                  # 主编排（7 阶段）
-│   ├── nightly.sh                   # 夜间无人值守
+├── scripts/                         # bash 机械工具层（人维护）
+│   ├── pipeline.sh                  # 主编排（8 阶段骨架，无策略）
+│   ├── nightly.sh                   # 夜间无人值守入口
 │   ├── e4-verify-bundle.sh          # E4 交付包验证
 │   ├── promote-extractor.sh         # 提取器晋级闸门
 │   ├── promote-sdk.sh               # SDK 扩展晋级闸门
 │   ├── graph/
-│   │   ├── match-providers.sh       # 提供者匹配
-│   │   ├── compute-stats.sh         # 统计计算（从 calibrate 拆出）
-│   │   └── assemble-graph.sh        # 图谱拼装
+│   │   ├── build-nodes.sh           # Layer 1 执行（--plan 参数化，无判断）
+│   │   ├── build-edges.sh           # Layer 2 提供者池匹配 + 边产出
+│   │   ├── compute-stats.sh         # Layer 3 算统计数（无 rating）
+│   │   ├── assemble-graph.sh        # 图谱拼装
+│   │   └── merge-graphs.sh          # 增量合并
 │   ├── gates/
-│   │   ├── GE3-extraction-quality.sh
-│   │   ├── GE2.5-framework-analysis.sh  # 框架分析门禁（新）
-│   │   ├── GP1-verify.sh            # 语法 → 可执行性 → 格式
-│   │   ├── GP2-verify.sh            #   → 数据合理性 → 回归
-│   │   ├── GP3-verify.sh
-│   │   ├── GP4-verify.sh
-│   │   └── GP5-verify.sh
-│   ├── base/                        # SDK（亦可被 AI 扩展）
+│   │   ├── G0-verify.sh             # 构建/依赖
+│   │   ├── G4-verify.sh             # Lint
+│   │   ├── G5-verify.sh             # Test
+│   │   ├── GE2.5-framework-analysis.sh # 框架分析门禁（三级回退）
+│   │   ├── GE3-extraction-quality.sh   # 提取质量门禁（双维度）
+│   │   ├── GP1-GP5-verify.sh        # 提取脚本 fixture 验证
+│   │   ├── all.sh                   # 门禁调度器
+│   │   └── status.sh                # 门禁目录
+│   ├── base/                        # 原子能力工具（可被 AI 扩展）
+│   │   ├── scan-files.sh            # 文件扫描
+│   │   ├── merge-json.sh            # JSON 数组合并 + 去重
+│   │   ├── validate-schema.sh       # Schema 校验 + C-E1 证据链
+│   │   ├── run-ai-analysis.sh       # state.yaml 字段提取（无判断）
 │   │   ├── java-parser.sh           # Java 文件扫描/解析
-│   │   └── json-writer.sh           # JSON 序列化
+│   │   ├── json-writer.sh           # JSON 序列化（含 edge v2.1 字段）
+│   │   └── repo-manager.sh          # git clone/update
 │   └── tests/
-│       └── run.sh                   # 测试套件
+│       └── run.sh                   # 测试套件（GP1-5 + graph smoke）
 │
 ├── .harness/                        # AI 产出物
-│   ├── extractors/                  # 提取器（每协议一个目录）
-│   │   ├── dubbo/
-│   │   │   ├── extract.sh           # 提取脚本
-│   │   │   └── pattern.md           # 检测规则
-│   │   ├── rest/
-│   │   ├── grpc/
-│   │   ├── sofarpc/
-│   │   ├── http-client/
-│   │   ├── mq/
-│   │   ├── custom/
-│   │   └── tags/
-│   │   └── tags/
+│   ├── extractors/                  # 提取器基线（每协议一个目录）
+│   │   ├── dubbo/  sofarpc/  grpc/  rest/
+│   │   ├── http-client/  mq/  custom/  tags/
+│   │   └── each: extract.sh + pattern.md
 │   ├── fixtures/                    # 测试样本
-│   │   ├── sample-http-client/
-│   │   ├── sample-mq/
-│   │   ├── sample-socket/
+│   │   ├── sample-http-client/  sample-mq/  sample-socket/
 │   │   └── expected/
 │   ├── rules/                       # 检测规则知识库
 │   ├── patterns/                    # 发现的模式
-│   └── staging/                     # E4 开发暂存 → 验收后迁移到 extractors/
+│   └── staging/                     # E4 开发暂存 → 验收后迁移
 │
 ├── harness-conf/                    # 运营治理（人维护）
 │   ├── DESIGN-V2.md                 # ← 本文件
@@ -308,13 +316,17 @@ harness/
 │   ├── status/                      # state.yaml + progress.md
 │   ├── changes/                     # 任务流水
 │   ├── specs/                       # 提取范围
+│   ├── workflow/                    # QUALITY_CONTRACT 等
 │   └── archive/                     # 归档
 │
 ├── output/                          # 运行时产物
-│   ├── analysis/                    # 框架分析产出（新）
-│   ├── nodes/                       # 节点
+│   ├── analysis/                    # 框架分析 + round-*.state.yaml
+│   ├── nodes/                       # 最终节点（合并后）
+│   ├── nodes-script/                # 脚本维度中间产物（双轨时）
+│   ├── nodes-ai/                    # AI 维度中间产物（双轨时）
 │   ├── edges/                       # 边
-│   ├── calibration/                 # 校准
+│   ├── calibration/                 # 校准 + dual-summary.json
+│   ├── reviews/                     # 矛盾清单 + 人工确认包
 │   └── knowledge-graph/             # 最终图谱
 │
 └── EXTRACTION-WORKFLOW.md           # 提取器技术真相源
@@ -520,6 +532,7 @@ D1 框架分析 (profile.yaml)
 
 | 资产 | 位置 | 层 |
 |------|------|:---:|
+| **开发规范（md-first）** | `DEVELOPMENT_STANDARD.md` | 规范 |
 | 节点 Schema | `schemas/node.schema.json` | 契约 |
 | 边 Schema | `schemas/edge.schema.json` | 契约 |
 | AI 分析 Harness 约束 | `templates/ai-analysis-harness.md` | md |

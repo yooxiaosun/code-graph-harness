@@ -71,3 +71,5 @@
 | 图谱 Schema | `schemas/knowledge-graph.schema.json` |
 | 框架分析格式 | `schemas/profile.schema.yaml` |
 | AI 介入模板 | `templates/{analyze-framework,analyze-pattern,generate-script,persist-rule}.md` |
+| AI 迭代约束 | `templates/ai-analysis-harness.md` |
+| 双维度模板 | `templates/{dual-pass-review,dual-dimension-merge,build-nodes-scheduling,calibration-summary,low-conf-drill,generate-human-review}.md` |

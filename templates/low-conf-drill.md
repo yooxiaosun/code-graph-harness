@@ -44,4 +44,5 @@
 - 不得修改源文件 / repos.yaml / harness-conf
 
 ## Gate
-产出后由 `bash scripts/base/run-ai-analysis.sh <state-file> 2 low_conf_drill` 校验。
+产出后由 `bash scripts/base/run-ai-analysis.sh <state-file>` 提取收敛判定字段，
+AI 按 `templates/ai-analysis-harness.md` 场景表（low_conf_drill: C-E1/C-E3, 最大 2 轮）自主判断是否收束。

@@ -9,6 +9,7 @@
 #   AI 维:  图谱实质验收（每个节点有源码证据 + 双维度一致性可解释）
 set -uo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 THRESHOLD="${1:-0.70}"
 EDGE_STATS="output/edges/edge-stats.json"
 CALIBRATION="output/calibration/calibration-report.json"

@@ -47,17 +47,31 @@ edge_rpc_json() {
     local source_path="${6:-}"
 
     cat <<EDGE
-{"from": $(json_escape "$from"), "to": $(json_escape "$to"), "type": "rpc_call", "protocol": $(json_escape "$protocol"), "fromService": $(json_escape "$from_service"), "toService": $(json_escape "$to_service"), "metadata": {"synchronous": true, "sourcePath": $(json_escape "$source_path")}}
+{"from": $(json_escape "$from"), "to": $(json_escape "$to"), "type": "rpc_call", "protocol": $(json_escape "$protocol"), "fromService": $(json_escape "$from_service"), "toService": $(json_escape "$to_service"), "confidence": "high", "evidence_refs": [{"source_path": $(json_escape "$source_path"), "tier": 2}], "evidence_type": "call_site", "source": "bash", "metadata": {"synchronous": true, "dual_dimension_consistency": "bash_only"}}
 EDGE
+}
+
+# confidence 数值 → 字符串分级（md-first: 确定性映射, 非策略判断）
+conf_level() {
+    local val="${1:-0}"
+    if awk -v v="$val" 'BEGIN { exit !(v >= 0.8) }'; then
+        echo "high"
+    elif awk -v v="$val" 'BEGIN { exit !(v >= 0.6) }'; then
+        echo "medium"
+    else
+        echo "low"
+    fi
 }
 
 edge_nonstandard_json() {
     local from="$1" to="$2" protocol="$3" confidence="$4"
     local from_service="$5" to_service="$6" pattern="${7:-}" source_path="${8:-}"
     local topic="${9:-}" host_pattern="${10:-}"
+    local level
+    level=$(conf_level "$confidence")
 
     cat <<EDGE
-{"from": $(json_escape "$from"), "to": $(json_escape "$to"), "type": "nonstandard_call", "protocol": $(json_escape "$protocol"), "confidence": $confidence, "fromService": $(json_escape "$from_service"), "toService": $(json_escape "$to_service"), "pattern": $(json_escape "$pattern"), "sourcePath": $(json_escape "$source_path"), "metadata": {"topic": $(json_escape "$topic"), "hostPattern": $(json_escape "$host_pattern")}}
+{"from": $(json_escape "$from"), "to": $(json_escape "$to"), "type": "nonstandard_call", "protocol": $(json_escape "$protocol"), "fromService": $(json_escape "$from_service"), "toService": $(json_escape "$to_service"), "pattern": $(json_escape "$pattern"), "confidence": $(json_escape "$level"), "evidence_refs": [{"source_path": $(json_escape "$source_path"), "tier": 2}], "evidence_type": "call_site", "source": "bash", "metadata": {"topic": $(json_escape "$topic"), "hostPattern": $(json_escape "$host_pattern"), "dual_dimension_consistency": "bash_only"}}
 EDGE
 }
 

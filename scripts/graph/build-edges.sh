@@ -192,7 +192,7 @@ for ns_file in $(find "$NODES_DIR" -name "nonstandard*.json" -type f 2>/dev/null
             pattern="http-client"
         elif echo "$n_proto" | grep -qE "mq"; then
             if [ -n "$topic" ] && [ "$topic" != "unknown-topic" ]; then
-                confidence=$(( confidence + 0.1 ))
+                confidence=$(awk -v c="$confidence" 'BEGIN { printf "%.2f", c + 0.1 }')
             fi
             pattern="mq-interaction"
         elif echo "$n_proto" | grep -qE "socket"; then

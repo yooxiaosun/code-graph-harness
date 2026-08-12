@@ -29,10 +29,14 @@ tools: Read, Grep, Glob, Write, Edit, Task
 
 ## 关键文档
 
+- 工程设计 v2：`harness-conf/DESIGN-V2.md`
+- **开发规范（md-first）**：`DEVELOPMENT_STANDARD.md`（所有调度/编码决策先对照此规范）
 - 流程定义：`harness-conf/workflow/extraction-flow.md`
 - 门禁标准：`harness-conf/workflow/gate-criteria.md`
 - 状态机规则：`harness-conf/workflow/state-maintenance.md`
 - 自适应手册：`harness-conf/guides/self-adaptation.md`
+- 调度决策模板：`templates/build-nodes-scheduling.md`（E2 交接给 pipeline-executor 时指明）
+- 双维度合并/校准：`templates/dual-dimension-merge.md` + `templates/calibration-summary.md`（E2.5/E3 交接用）
 
 ## 召回协议
 

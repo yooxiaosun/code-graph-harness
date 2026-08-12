@@ -5,8 +5,9 @@
 你的工作受 `templates/ai-analysis-harness.md` 约束。
 
 ## Input
-- 脚本维度产出: `output/nodes-script/<service>/*.json` + `output/edges-script/<service>/*.json`
+- 脚本维度产出: `output/nodes-script/<service>/*.json`（节点；边由 build-edges.sh 在合并后统一产出）
 - AI 维度产出 (Round 1): `output/nodes-ai/<service>/round-1.json` (首轮结果,作为对比基线)
+- 合并矛盾清单: `output/reviews/<service>/contradictions.json`（来自 dual-dimension-merge.md）
 - 协议级印证信号: `output/analysis/<service>-profile.yaml`
 - 上一轮状态: `output/analysis/<service>/round-{N-1}.state.yaml`
 
