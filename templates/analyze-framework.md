@@ -70,6 +70,18 @@ unknowns:
 2. **决策记录**：每个协议的置信度结论与依据（对应 review_basis）
 3. **覆盖完整度自评**：未覆盖的盲区与风险
 
+## Profile 在 v2.1 架构中的角色 (Q-Final=A)
+
+本模板产出的 profile.yaml 是**协议级印证信号**, 不是节点级独立印证源：
+- 节点级印证 (node.confidence 起点) = bash ∩ AI 两方独立获取信息后取交集
+- 协议级加权 = profile.{proto}.confidence 在节点级起点上做档位调整
+
+具体加权规则见 `templates/ai-analysis-harness.md §7`。
+
+本模板无需修改产出格式, 但分析时需注意：
+- 当 `confidence: none` 时, 后续任何节点若仍被 bash 或 AI 找到, 将被强制降级
+- 当 `confidence: high` 时, 后续节点可被协议级加权 +1 档
+
 ## Gate
 产出后运行：`bash scripts/gates/GE2.5-framework-analysis.sh output/analysis/{service_name}-profile.yaml output/analysis/{service_name}-profile-review.md`
 - exit 0 → 按 extraction_plan 精准提取

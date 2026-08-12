@@ -43,6 +43,12 @@
 - 任何回退必须重新执行对应门禁，禁止跳门禁推进
 - 发布确认是硬停闸，必须 User 确认后才能归档
 
+### AI 迭代分析纪律（v2.1 新增，对应 `templates/ai-analysis-harness.md`）
+- 任何涉及多轮 AI 分析的场景（D1 框架分析 / 双维度二轮校准 / 低置信度调查 / E4 自适应），必须遵循 `templates/ai-analysis-harness.md` 中的约束
+- 任何模板定义的 Hard Cap 不得放宽：最大轮数、单任务耗时、flip-flop 次数、C-E1 证据底线
+- Bail-out 时严格不给出 confidence 判断，留给人工确认
+- Profile 是协议级印证信号，不是节点级独立印证源（Q-Final=A，详见 ai-analysis-harness.md §7）
+
 ## 关键路径速查
 
 | 资源 | 路径 |

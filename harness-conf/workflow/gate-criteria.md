@@ -43,7 +43,7 @@ status: Baseline
 > **三级回退（不阻断流水线）**：exit 0 → 按 extraction_plan 精准提取；exit 2 → 警告 + 回退全部提取器；exit 1 / 无 profile → 静默回退全部提取器（= v1 行为）。
 > Schema 定义见 `schemas/profile.schema.yaml`；分析模板见 `templates/analyze-framework.md`。
 
-## §G-E3 提取质量（E3 末）
+## §G-E3 提取质量（E3 末，v2.1 双维度）
 
 | 检查项 | 级别 | 验证命令 |
 |--------|:----:|---------|
@@ -51,8 +51,12 @@ status: Baseline
 | 匹配率达标（≥0.70 FAIR 线） | MUST | `jq '.match_rate' output/edges/edge-stats.json` |
 | blocker 为空 | MUST | `jq '.blockers' output/calibration/calibration-report.json` == `[]` |
 | unknown pattern 已处置 | MUST | E3 报告中 unknown pattern 清单为空或已转入 E4 |
+| 节点 schema + 证据链合规（C-E1） | MUST（双轨模式） | `bash scripts/gates/GE3-extraction-quality.sh` 的 [AI维] 部分 exit 0 |
+| 双维度一致性可解释（无未归因 contradiction） | SHOULD（双轨模式） | 同上 [AI维] 部分 |
 
 > POOR（<0.70）不可豁免通过，必须进 E4 或由 User 显式降级接受（记录豁免）。
+> **双维度语义（v2.1, Q-Final=A）**：脚本维（match_rate/blockers/schema）是确定性验收；AI 维（C-E1 证据底线 + contradiction 归因）是实质验收。评级（GOOD/FAIR/POOR）与分流由 D2 AI（calibration-analyzer）决策，bash 只算数不评级。
+> AI 迭代分析约束见 `templates/ai-analysis-harness.md`；双维度校准模板见 `templates/dual-pass-review.md`。
 
 ## §G-E4 自适应代码质量（E4 末，本次无新脚本时标 N/A）
 

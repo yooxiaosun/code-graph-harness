@@ -5,6 +5,57 @@
 
 ---
 
+## [v2.1.0] - 2026-08-12 - 双维度架构（脚本 × AI 交叉印证）
+
+### 核心变更
+
+**1. 双维度提取（build-nodes.sh）**
+- 脚本维度：`.harness/extractors/*/extract.sh` 机械基线 → `output/nodes-script/<svc>/`
+- AI 维度：AI 直产 → `output/nodes-ai/<svc>/`（自动探测，存在即双轨）
+- 合并：`scripts/base/merge-dual.sh` 取并集 + 置信度分级 + 去重 → `output/nodes/<svc>/`
+- 向后兼容：无 AI 产出时单轨直写（v2 行为不变）
+
+**2. 置信度模型（Q-Final=A）**
+- 节点级印证：bash∩AI=high / 单方=medium / 矛盾=low
+- 协议级加权：profile high→+1 / none→-1（profile 非独立印证源，见 ai-analysis-harness.md §7）
+
+**3. 证据底线 C-E1 三级豁免**
+- 普通节点：evidence_refs ≥1, tier 1-3（不满足即丢弃）
+- 服务边界外（*_only）：上限 medium，进人工确认包
+- 技术不可识别（*_unknown/dynamic）：low，进 bail-out 包
+
+**4. AI 分析 Harness 约束（`templates/ai-analysis-harness.md`）**
+- 收敛判定 4 条按场景分级：D1=3 / 双维度=4 / 低置信度=2
+- 最大轮数：D1=2 / 双维度=3 / 低置信度=2 / E4=3
+- Bail-out 严格不猜测（Q-Escape=A）
+- `scripts/base/run-ai-analysis.sh` 驱动迭代
+
+**5. 新增 Schema 与模板**
+- `schemas/node.schema.json` + `schemas/edge.schema.json`（v2.1 契约，含 evidence_refs/evidence_type/source）
+- `templates/dual-pass-review.md`（双维度二轮校准）
+- `templates/low-conf-drill.md`（低置信度深挖）
+- `templates/generate-human-review.md`（人工确认包）
+
+**6. 门禁双维度（GE3 重写）**
+- 脚本维：match_rate / blockers / 节点 schema + C-E1 证据链合规
+- AI 维：双维度一致性可解释 + 实质验收
+- 低置信度/bail-out 项 → `output/reviews/human-review-<date>.md` 白天人工确认
+
+**7. 新增原子能力（scripts/base/）**
+- `scan-files.sh`（文件扫描）/ `merge-json.sh`（JSON 合并）/ `validate-schema.sh`（Schema 校验）/ `merge-dual.sh`（双维度合并）
+
+### 文档对齐
+- DESIGN-V2.md 新增 §12 v2.1 双维度架构章节
+- gate-criteria.md §G-E3 重写为双维度
+- extraction-flow.md E2 双维度 + E3 双维度校准说明
+- CLAUDE.md 新增「AI 迭代分析纪律」硬约束
+
+### 向后兼容
+- 单轨模式（无 AI 产出）= v2 行为，nightly 零退化
+- 现有 3 个 fixture + GP1-GP5 + graph smoke 全部保留
+
+---
+
 ## [v2.0.0] - 2026-08-11 - 工程设计 v2（分层架构 + AI 决策 + 框架分析）
 
 ### 核心变更

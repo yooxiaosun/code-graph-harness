@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Code Graph Edge",
+  "description": "v2.1 — 提取流程的边数据契约。RpcEdge 与 NonstandardEdge 均符合本 schema。",
+  "type": "object",
+  "required": [
+    "from", "to", "type", "protocol",
+    "fromService", "toService",
+    "confidence", "evidence_refs", "evidence_type", "source"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "from": {
+      "type": "string",
+      "description": "调用方 InterfaceNode ID"
+    },
+    "to": {
+      "type": "string",
+      "description": "被调用方 InterfaceNode ID"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["rpc_call", "nonstandard_call"]
+    },
+    "protocol": {
+      "type": "string",
+      "enum": ["dubbo", "sofarpc", "grpc", "rest", "http-client", "mq", "custom", "UNKNOWN-STACK"]
+    },
+    "fromService": {
+      "type": "string"
+    },
+    "toService": {
+      "type": "string"
+    },
+    "pattern": {
+      "type": ["string", "null"],
+      "description": "非标边的模式名 (type=nonstandard_call 时填充)"
+    },
+    "confidence": {
+      "type": "string",
+      "description": "节点级印证 + 协议级加权后的最终置信度。none 的边不应进入图谱 (应被丢弃)",
+      "enum": ["high", "medium", "low"]
+    },
+    "evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["source_path", "tier"],
+        "additionalProperties": false,
+        "properties": {
+          "source_path": {
+            "type": "string",
+            "description": "引用源文件相对路径 (Q-M1-4=A: 允许 <path> 或 <path>:<line>)"
+          },
+          "tier": {
+            "type": "integer",
+            "description": "证据强度等级: 1=具体调用点, 2=类名匹配, 3=模式推断, 4=无证据(禁止)",
+            "enum": [1, 2, 3, 4]
+          },
+          "description": {
+            "type": "string",
+            "description": "证据描述 (可选)"
+          }
+        }
+      },
+      "description": "证据链数组。C-E1 豁免规则见 templates/ai-analysis-harness.md §2"
+    },
+    "evidence_type": {
+      "type": "string",
+      "description": "边的证据性质分类 (边是调用关系, 不含声明类证据)",
+      "enum": [
+        "source_reference",
+        "call_site",
+        "consumer_reference_only",
+        "esb_integration_unknown",
+        "custom_protocol_unknown",
+        "dynamic_dispatch"
+      ]
+    },
+    "source": {
+      "type": "string",
+      "description": "产出来源, 双维度架构必填",
+      "enum": ["bash", "ai", "dual"]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "boundary_external": {
+          "type": "boolean",
+          "default": false,
+          "description": "toService 不在 repos.yaml 分析范围 (跨仓库调用)"
+        },
+        "dual_dimension_consistency": {
+          "type": "string",
+          "enum": ["both", "bash_only", "ai_only", "contradiction"]
+        }
+      }
+    }
+  }
+}

@@ -442,6 +442,90 @@ E2 执行:
 | 原子能力 | Bash 脚本定义的最小可组合能力单元，确定性、无判断逻辑 | §2.1 |
 | AI 决策层 | 三个 AI 自主判断的决策点：D1 提取计划 / D2 质量判定 / D3 自适应编码 | §3 |
 | 框架分析 | 仓库克隆后、提取前的 AI 分析阶段，产出 profile + review | §7 |
+| 双维度提取 | 脚本维度(bash) ∩ AI 维度 并行提取，交叉印证定置信度 | §12 |
+| 协议级印证信号 | profile 的角色：非独立印证源，仅做协议级置信度加权 | §12 |
+| AI 分析 Harness | AI 迭代分析的收敛判定/Hard Cap/Bail-out 约束 | §12 |
+
+---
+
+## §12 v2.1 双维度架构（Q1-Q5 决策落地）
+
+### 12.1 核心哲学
+
+> **不信任单一来源，信任交叉验证**。
+
+- 脚本 = 机械可复现的事实基线（可能漏报误报）
+- AI = 语义理解（可能幻觉）
+- 两者的不一致 = 最有价值的信号源 → 归因 → 双轨升级
+
+### 12.2 置信度模型（Q-Final=A, Q-Evidence-3=A）
+
+```
+节点级印证（起点）:
+  bash ∩ AI 双方命中 → high
+  单方命中           → medium
+  双方矛盾           → low
+
+协议级加权（profile 角色）:
+  profile.{proto}=high → node +1 档 (上限 high)
+  profile.{proto}=low  → node 保持原档
+  profile.{proto}=none → node 强制 -1 档 (下限 low)
+
+为什么 profile 不是独立印证源:
+  profile / bash extractor / AI 都读同一份仓库 (pom.xml + Java 代码),
+  profile 只是二次总结, 不能作为独立信息源。
+```
+
+### 12.3 证据底线 C-E1 三级豁免（Q-Conv=C, Q-Evidence-1=C, Q-Evidence-2=C）
+
+| 级别 | evidence_type | 要求 | 处理 |
+|------|---------------|------|------|
+| 普通节点 | source_reference / declaration_reference / call_site | evidence_refs ≥1, tier 1-3 | 不满足即丢弃 (C-E1 fail) |
+| 服务边界外 | *_only (provider/consumer/endpoint) | 本仓库声明方证据 + boundary_external=true | confidence 上限 medium, 进人工确认包 |
+| 技术不可识别 | *_unknown / dynamic_dispatch | 允许 0 证据但强制标注 | confidence=low, 进 bail-out 包 |
+
+### 12.4 AI 分析 Harness 约束（收敛判定）
+
+约束文件：`templates/ai-analysis-harness.md`
+
+| 场景 | 最大轮数 | 收敛判定条数 |
+|------|:---:|:---:|
+| D1 框架分析 | 2 | C-E1/C-E2/C-E4 (去 C-E3) |
+| 双维度二轮校准 | 3 | C-E1/C-E2/C-E3/C-E4 (全部) |
+| 低置信度调查 | 2 | C-E1/C-E3 |
+| E4 自适应 | 3 | 沿用既有 |
+
+Bail-out 严格不猜测（Q-Escape=A）：达上限/flip-flop≥2/自报/超时 → 加入人工确认包，不产出 confidence 判断。
+
+### 12.5 双维度流程
+
+```
+D1 框架分析 (profile.yaml) 
+    → build-nodes.sh 双轨:
+        脚本维度 → output/nodes-script/<svc>/
+        AI 维度  → output/nodes-ai/<svc>/   (自动探测)
+        合并      → output/nodes/<svc>/      (merge-dual.sh: 置信度分级+去重)
+    → GE3 双维度门禁:
+        脚本维: match_rate/blockers/schema/C-E1
+        AI 维: 双维度一致性可解释 + 实质验收
+    → 人工确认包 (output/reviews/human-review-<date>.md)
+```
+
+### 12.6 新增资产清单
+
+| 资产 | 位置 |
+|------|------|
+| 节点 Schema (v2.1) | `schemas/node.schema.json` |
+| 边 Schema (v2.1) | `schemas/edge.schema.json` |
+| AI 分析 Harness 约束 | `templates/ai-analysis-harness.md` |
+| 双维度二轮校准模板 | `templates/dual-pass-review.md` |
+| 低置信度调查模板 | `templates/low-conf-drill.md` |
+| 人工确认包模板 | `templates/generate-human-review.md` |
+| 文件扫描原子能力 | `scripts/base/scan-files.sh` |
+| JSON 合并原子能力 | `scripts/base/merge-json.sh` |
+| Schema 校验原子能力 | `scripts/base/validate-schema.sh` |
+| AI 迭代驱动 | `scripts/base/run-ai-analysis.sh` |
+| 双维度合并 | `scripts/base/merge-dual.sh` |
 
 ---
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Code Graph — Knowledge Extraction Pipeline
-# 7-phase execution: 0→Deps, 1→Repos, 2→Nodes (L1), 3→Edges (L2), 4→Compute Stats (L3), 5→Assemble, 6→Summary
+# 8-phase execution: 0→Deps, 1→Repos, 2→Nodes (L1 双维度), 2.5→Dual Calibration, 3→Edges (L2), 4→Stats (L3), 5→Assemble, 6→Merge, 7→Summary
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -10,12 +10,13 @@ NODES_DIR="output/nodes"
 EDGES_DIR="output/edges"
 CALIBRATION_DIR="output/calibration"
 GRAPH_DIR="output/knowledge-graph"
+AI_NODES_DIR="output/nodes-ai"
 
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 echo "==== Code Graph Knowledge Extraction Pipeline ===="
 echo "  Started: $TIMESTAMP"
 echo "  Config: $REPO_CONFIG"
-echo "  Architecture: Nodes(L1) → Edges(L2) → ComputeStats(L3) → Assemble"
+echo "  Architecture: D1分析→Nodes双维度(L1)→Edges(L2)→Stats(L3)→Assemble"
 echo ""
 
 run_phase() { echo "══ Phase $1 — $2 ══"; }
@@ -79,9 +80,10 @@ fi
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────
-# Phase 2: Node Extraction (Layer 1)
+# Phase 2: Node Extraction (Layer 1, 双维度)
+# 脚本维度(bash extractors) + AI 维度(output/nodes-ai/) 自动探测合并
 # ─────────────────────────────────────────────────────────────────────
-run_phase "2" "Node Extraction (Layer 1: per-service, per-protocol)"
+run_phase "2" "Node Extraction (Layer 1: dual-dimension bash × AI)"
 
 if [ -f "$REPO_CONFIG" ] && [ "$(get_repo_count "$REPO_CONFIG")" -gt 0 ] 2>/dev/null; then
     while IFS= read -r repo_url; do
@@ -91,8 +93,25 @@ if [ -f "$REPO_CONFIG" ] && [ "$(get_repo_count "$REPO_CONFIG")" -gt 0 ] 2>/dev/
 
         [ ! -d "$REPO_PATH" ] && echo "  [SKIP] $REPO_NAME: not cloned" && continue
 
+        # build-nodes.sh 自动探测 output/nodes-ai/<svc>/：存在则双轨合并，否则单轨直写
         bash "$GRAPH_SCRIPTS/build-nodes.sh" "$REPO_NAME" "$REPO_PATH" "$NODES_DIR"
     done < <(get_repo_urls "$REPO_CONFIG")
+fi
+echo ""
+
+# ─────────────────────────────────────────────────────────────────────
+# Phase 2.5: 双维度校准摘要
+# AI 二轮校准 + 人工确认包由 AI Agent 执行（templates/dual-pass-review.md），
+# 此处仅汇总状态供 E3 与 human review 使用
+# ─────────────────────────────────────────────────────────────────────
+run_phase "2.5" "Dual Calibration Status"
+if [ -d "$AI_NODES_DIR" ] && [ -n "$(ls "$AI_NODES_DIR" 2>/dev/null)" ]; then
+    AI_SVCS=$(ls "$AI_NODES_DIR" | wc -l | tr -d ' ')
+    echo "  AI 维度服务数: $AI_SVCS"
+    echo "  提示: 低置信度/bail-out 项由 calibration-analyzer 收集 → output/reviews/human-review-<date>.md"
+    echo "  规范: templates/ai-analysis-harness.md + templates/dual-pass-review.md"
+else
+    echo "  [SKIP] 无 AI 维度产出 — 单轨模式（脚本维度直写）"
 fi
 echo ""
 
@@ -146,3 +165,4 @@ echo "==== Pipeline Complete ===="
 echo "  Graph:  $GRAPH_DIR/latest.json"
 echo "  Edges:  $EDGES_DIR/"
 echo "  Report: $CALIBRATION_DIR/calibration-report.json"
+echo "  Mode:   $([ -d "$AI_NODES_DIR" ] && [ -n "$(ls "$AI_NODES_DIR" 2>/dev/null)" ] && echo "dual-dimension (bash × AI)" || echo "single-track (bash only)")"

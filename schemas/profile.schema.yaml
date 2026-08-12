@@ -1,6 +1,15 @@
 # profile.schema.yaml — 框架分析产出格式定义（v2 新增，人维护的不变层）
 # 约束对象: output/analysis/{service}-profile.yaml（D1 决策点产出）
 # 验收门禁: scripts/gates/GE2.5-framework-analysis.sh（G-E2.5）
+#
+# v2.1 角色定位 (Q-Final=A):
+#   profile.yaml 是协议级印证信号, 不是节点级独立印证源。
+#   节点级印证 = bash ∩ AI (独立信息获取方式)。
+#   profile 仅用于协议级加权:
+#     confidence high → node +1 档 (上限 high)
+#     confidence low  → node 保持原档
+#     confidence none → node 强制 -1 档 (下限 low)
+#   详见 templates/ai-analysis-harness.md §7
 
 schema_version: "1.0"
 target: "output/analysis/{service}-profile.yaml"
@@ -22,6 +31,10 @@ required_fields:
         type: string
         enum: [high, medium, low, none]
         required: true
+        description: >
+          协议级印证信号：表示本仓库是否可能使用某协议。
+          此字段后续参与节点 confidence 加权（详见 templates/ai-analysis-harness.md §7）。
+          high = 本仓强烈迹象使用此协议； none = 明确不使用（可作为 skip 依据）。
       declaration_style:
         type: string
         enum: [annotation, xml, code, config]

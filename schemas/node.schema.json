@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Code Graph InterfaceNode",
+  "description": "v2.1 — 提取流程的节点数据契约。所有 extractors 与 AI 直产必须产出符合本 schema 的节点。",
+  "type": "object",
+  "required": [
+    "id", "type", "name", "parent", "protocol", "role",
+    "path", "confidence", "evidence_refs", "evidence_type", "source"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "全局唯一标识 {parent}::{className}.{methodName}",
+      "pattern": "^[^:]+::[^:]+$"
+    },
+    "type": {
+      "type": "string",
+      "const": "interface"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "方法名或类名"
+    },
+    "parent": {
+      "type": "string",
+      "description": "父 ServiceNode ID"
+    },
+    "protocol": {
+      "type": "string",
+      "enum": [
+        "dubbo", "sofarpc", "grpc", "rest",
+        "http-client", "mq", "custom",
+        "UNKNOWN-STACK"
+      ]
+    },
+    "role": {
+      "type": "string",
+      "enum": ["provider", "consumer"]
+    },
+    "className": {
+      "type": ["string", "null"],
+      "description": "包名.类名, 可为 null (如 MQ topic 无类)"
+    },
+    "signature": {
+      "type": ["string", "null"],
+      "description": "方法签名, 可为 null"
+    },
+    "path": {
+      "type": "string",
+      "description": "源文件相对路径, 格式 '<relPath>:<lineNumber>'"
+    },
+    "httpMethod": {
+      "type": ["string", "null"],
+      "enum": [null, "GET", "POST", "PUT", "DELETE", "PATCH"]
+    },
+    "httpPath": {
+      "type": ["string", "null"],
+      "pattern": "^(/[^\\s]*)?$"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "业务标签 (Q-M1-1=A: 保持 string[] 简单格式, 向下兼容)"
+    },
+    "confidence": {
+      "type": "string",
+      "description": "节点级印证 + 协议级加权后的最终置信度。none 的节点不应进入图谱 (应被丢弃)",
+      "enum": ["high", "medium", "low"]
+    },
+    "evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["source_path", "tier"],
+        "additionalProperties": false,
+        "properties": {
+          "source_path": {
+            "type": "string",
+            "description": "引用源文件相对路径 (Q-M1-4=A: 允许 <path> 或 <path>:<line>)"
+          },
+          "tier": {
+            "type": "integer",
+            "description": "证据强度等级: 1=具体 annotation/代码位置, 2=类名匹配, 3=模式推断, 4=无证据(禁止)",
+            "enum": [1, 2, 3, 4]
+          },
+          "description": {
+            "type": "string",
+            "description": "证据描述 (可选)"
+          }
+        }
+      },
+      "description": "证据链数组。C-E1 豁免规则见 templates/ai-analysis-harness.md §2"
+    },
+    "evidence_type": {
+      "type": "string",
+      "description": "节点性质分类, 决定 C-E1 豁免级别",
+      "enum": [
+        "source_reference",
+        "declaration_reference",
+        "call_site",
+        "provider_declaration_only",
+        "consumer_reference_only",
+        "endpoint_declaration_only",
+        "esb_integration_unknown",
+        "custom_protocol_unknown",
+        "dynamic_dispatch"
+      ]
+    },
+    "source": {
+      "type": "string",
+      "description": "产出来源, 双维度架构必填",
+      "enum": ["bash", "ai", "dual"]
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Q-M1-2=A: metadata 整体 optional; evidence_type=*_only 时 boundary_external 隐式必填",
+      "additionalProperties": true,
+      "properties": {
+        "boundary_external": {
+          "type": "boolean",
+          "description": "服务边界外节点 (evidence_type 为 *_only 三类时隐式必填 true)",
+          "default": false
+        },
+        "detection_evidence": {
+          "type": "string",
+          "description": "协议判定依据: annotation / class_ref / method_pattern"
+        },
+        "profile_weight_applied": {
+          "type": "string",
+          "description": "协议级加权结果: '+1' / '0' / '-1'"
+        },
+        "dual_dimension_consistency": {
+          "type": "string",
+          "description": "双维度一致性: 'both' / 'bash_only' / 'ai_only' / 'contradiction'"
+        }
+      }
+    }
+  }
+}

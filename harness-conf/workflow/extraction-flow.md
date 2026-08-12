@@ -62,6 +62,12 @@ status: Baseline
 | 增量 | pipeline.sh + 变更检测（见 `EXTRACTION-WORKFLOW.md §6`） | 日常更新 |
 | 单仓库 | `build-nodes.sh <service> <path>` + 后续 layers | 调试 / 局部重提取 |
 
+**双维度提取（v2.1 新增，build-nodes.sh 自动）**：
+- 脚本维度：`.harness/extractors/*/extract.sh` 机械基线 → `output/nodes-script/<svc>/`
+- AI 维度：AI 直产（`templates/analyze-framework.md` + `templates/dual-pass-review.md`）→ `output/nodes-ai/<svc>/`
+- 自动探测：`output/nodes-ai/<svc>/` 存在 → 双轨合并（`merge-dual.sh` 置信度分级 + 去重）→ `output/nodes/<svc>/`；否则单轨直写（向后兼容）
+- 置信度：节点级印证（bash∩AI=high / 单方=medium）+ 协议级加权（profile high→+1 / none→-1）
+
 **交接块内容**：执行模式、任务编号、交付物路径要求、失败上报要求。
 
 **G-E2 门禁**：见 `gate-criteria.md §G-E2`；**G-E2.5 门禁**：见 `gate-criteria.md §G-E2.5`。
@@ -72,6 +78,13 @@ status: Baseline
 
 **v2 分工**：bash 层 `scripts/graph/compute-stats.sh` 只算数（5 项检查数值 + blockers，无 rating 字段）；
 评级（score ≥0.90 GOOD / ≥0.70 FAIR / 其余 POOR）与分流判定由 calibration-analyzer 的 D2 决策完成。
+
+**双维度校准（v2.1，E3 前置）**：
+- GE3 门禁含双维度验收（`scripts/gates/GE3-extraction-quality.sh`）：
+  - 脚本维：match_rate / blockers / 节点 schema + C-E1 证据链合规（`validate-schema.sh`）
+  - AI 维：双维度一致性可解释（无未归因 contradiction）+ 实质验收
+- 低置信度 / bail-out 项：calibration-analyzer 按 `templates/ai-analysis-harness.md` 收敛判定（C-E1/C-E2/C-E3/C-E4 按场景分级）+ `templates/dual-pass-review.md` 二轮校准 + `templates/low-conf-drill.md` 深挖
+- 产出 `output/reviews/human-review-<date>.md`（`templates/generate-human-review.md`）→ 白天人工确认
 
 **判定表**（唯一数据源：`output/calibration/calibration-report.json` + `output/edges/edge-stats.json`，若存在另读 `output/analysis/<service>-profile.yaml`）：
 
