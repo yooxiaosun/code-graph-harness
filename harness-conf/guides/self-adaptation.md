@@ -28,7 +28,7 @@ Step 1 模式分析    templates/analyze-pattern.md
   └─ 分流: confidence < 0.6 或 can_automate=false → 记录"需人工标注"后跳过
 
 Step 2 脚本生成    templates/generate-script.md
-  └─ 产物: scripts/extractors/nonstandard/extract-{pattern}.sh
+  └─ 产物: .harness/staging/<pattern>/extract-{pattern}.sh
 
 Step 3 fixture 验证（GP1-GP5，全绿才继续）
   ├─ 构造样例: fixtures/sample-{pattern}/（最小可触发 Java 代码）
@@ -38,7 +38,7 @@ Step 3 fixture 验证（GP1-GP5，全绿才继续）
 Step 4 持久化      templates/persist-rule.md
   ├─ .harness/patterns/{pattern}.md（含 GP 验证记录）
   ├─ repos.yaml nonstandard.scanners 注册
-  ├─ build-nodes.sh 接入调用序列
+  ├─ build-nodes.sh 自动扫描 .harness/extractors/，无需手动接入
   └─ 文档同步: EXTRACTION-WORKFLOW.md §2.4.5 + docs/specs/extraction-scope.md
 
 Step 5 回 E2 重跑验证真实效果
@@ -74,3 +74,12 @@ E3 发现: payment-service 中 3 处 import com.example.thrift.TServiceClient
   ↓ 回 E2 重跑: unresolved 从 8 降到 2, match_rate 0.68 → 0.81 (FAIR)
   ↓ E3 判定 E5 → 发布
 ```
+
+## §6 三类产物晋级与评审路径（v2）
+
+| 产物类别 | 产出位置 | 自证方式 | 晋级通道 | 评审方式 |
+|---------|---------|---------|---------|---------|
+| 代码层（提取器） | `.harness/staging/<pattern>/` | `bash scripts/e4-verify-bundle.sh <pattern>` | `promote-extractor.sh` → `.harness/extractors/<pattern>/` | GP1-GP5 全绿 |
+| 代码层（SDK 扩展） | `.harness/staging/sdk/<name>/` | `test-<name>.sh` | `promote-sdk.sh` → `scripts/base/` | 测试全绿 + bash -n |
+| 分析层（报告） | `docs/changes/<任务>/artifacts/E4-adapt-report.md` | 内容审查 | 无需晋级（直接归档） | orchestrator / gate-reviewer |
+| 知识层（规则） | `.harness/rules/` `.harness/patterns/` | content review | 直接写入（不入晋级闸门） | gate-reviewer 抽样审查 |

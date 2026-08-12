@@ -1,12 +1,12 @@
 ---
 title: harness · 门禁标准
-purpose: G-E1 至 G-E5 门禁检查项的单一真源（每项含可执行验证命令）
+purpose: G-E1 至 G-E5（含 G-E2.5）门禁检查项的单一真源（每项含可执行验证命令）
 version: v1.0.0
 author: harness
 status: Baseline
 ---
 
-# harness · 门禁标准（G-E1 至 G-E5）
+# harness · 门禁标准（G-E1 至 G-E5，含 G-E2.5）
 
 > 所有门禁结论必须附实际执行的命令与输出。未运行的验证不得描述为通过。
 > 豁免规则：任一门禁豁免必须 User 明确确认，并记录在任务级 progress.md（硬停闸之一）。
@@ -30,6 +30,19 @@ status: Baseline
 | 边统计存在 | MUST | `test -f output/edges/edge-stats.json && echo OK` |
 | 节点目录非空 | SHOULD | `ls output/nodes/ \| wc -l` ≥ 1 |
 
+## §G-E2.5 框架分析质量（E2 中，D1 产出验收，v2 新增）
+
+| 检查项 | 级别 | 验证命令 |
+|--------|:----:|---------|
+| profile 存在且 YAML 可解析 | MUST（否则完全失败） | `bash scripts/gates/GE2.5-framework-analysis.sh output/analysis/<service>-profile.yaml` 退出码非 1 |
+| 必填字段齐全（service/framework_signals/extraction_plan/unknowns） | MUST（否则完全失败） | 同上 |
+| confidence 枚举合法（high/medium/low/none） | MUST（否则完全失败） | 同上 |
+| medium+ 信号均有 ≥1 条 review_basis | SHOULD（缺失为部分失败） | 同上，退出码 0 |
+| 自审报告产出 `<service>-profile-review.md` | SHOULD（缺失为部分失败） | 同上 |
+
+> **三级回退（不阻断流水线）**：exit 0 → 按 extraction_plan 精准提取；exit 2 → 警告 + 回退全部提取器；exit 1 / 无 profile → 静默回退全部提取器（= v1 行为）。
+> Schema 定义见 `schemas/profile.schema.yaml`；分析模板见 `templates/analyze-framework.md`。
+
 ## §G-E3 提取质量（E3 末）
 
 | 检查项 | 级别 | 验证命令 |
@@ -45,8 +58,8 @@ status: Baseline
 
 | 检查项 | 级别 | 验证命令 |
 |--------|:----:|---------|
-| 新脚本语法 | MUST | `bash -n scripts/extractors/nonstandard/extract-{pattern}.sh` |
-| GP1-GP5 fixture 验证 | MUST | `bash scripts/extractors/nonstandard/verify/GP1-verify.sh` … `GP5-verify.sh` 依次 exit 0 |
+| 新脚本语法 | MUST | `bash -n .harness/staging/<pattern>/extract-{pattern}.sh` |
+| GP1-GP5 fixture 验证 | MUST | `bash scripts/gates/GP1-verify.sh` … `GP5-verify.sh` 依次 exit 0 |
 | 全量回归 | MUST | `bash scripts/tests/run.sh`（exit 0） |
 | 既有 fixture 不受影响 | MUST | `bash scripts/tests/run.sh` 输出中 http-client/mq/socket 样例通过 |
 | 持久化完整性 | MUST | `.harness/patterns/{pattern}.md` 存在 + `repos.yaml` scanner 已注册 + `EXTRACTION-WORKFLOW.md` 章节已更新 |

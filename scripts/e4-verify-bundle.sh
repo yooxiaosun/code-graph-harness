@@ -21,7 +21,7 @@ BUNDLE_DIR=".harness/staging/$PATTERN"
 SCRIPT_FILE="$BUNDLE_DIR/extract-$PATTERN.sh"
 SAMPLE_DIR="$BUNDLE_DIR/fixtures/sample-$PATTERN"
 EXPECTED_FILE="$BUNDLE_DIR/fixtures/expected/$PATTERN.json"
-FIXTURES_DIR="scripts/extractors/nonstandard/fixtures"
+FIXTURES_DIR=".harness/fixtures"
 
 FAILED=0
 fail() { echo "[FAIL] $1"; FAILED=1; }
@@ -46,16 +46,16 @@ else
 fi
 
 # ── GP2/GP3/GP4: 执行 + JSON 校验 + 召回 ─────────────────────────────
-# 提取器 source "$SCRIPT_DIR/../base/*.sh" 依赖正式目录结构，
-# 因此将交付包放入模拟正式环境（临时目录 + base 库）后执行。
+# 提取器 source "$ROOT_DIR/scripts/base/*.sh" 依赖正式目录结构，
+# 因此将交付包放入模拟正式环境（临时目录复现 .harness/extractors + scripts/base）后执行。
 TMP_ENV=$(mktemp -d)
 TMP_OUTPUT=$(mktemp -d)
 trap 'rm -rf "$TMP_OUTPUT" "$TMP_ENV"' EXIT
 
-mkdir -p "$TMP_ENV/extractors/nonstandard"
-cp -R "$ROOT_DIR/scripts/extractors/base" "$TMP_ENV/extractors/"
-cp "$SCRIPT_FILE" "$TMP_ENV/extractors/nonstandard/extract-$PATTERN.sh"
-SIM_SCRIPT="$TMP_ENV/extractors/nonstandard/extract-$PATTERN.sh"
+mkdir -p "$TMP_ENV/.harness/extractors/$PATTERN" "$TMP_ENV/scripts"
+cp -R "$ROOT_DIR/scripts/base" "$TMP_ENV/scripts/"
+cp "$SCRIPT_FILE" "$TMP_ENV/.harness/extractors/$PATTERN/extract.sh"
+SIM_SCRIPT="$TMP_ENV/.harness/extractors/$PATTERN/extract.sh"
 
 echo "── GP2: 沙箱执行（模拟正式环境）──"
 if bash "$SIM_SCRIPT" "test-service" "$SAMPLE_DIR" "$TMP_OUTPUT" > "$TMP_OUTPUT/run.log" 2>&1; then
@@ -101,13 +101,13 @@ fi
 # ── GP5: 既有提取器回归（http-client / mq / socket）──────────────────
 echo "── GP5: 回归 ──"
 REGRESS_FAILED=0
-while IFS='|' read -r ext sample expected; do
-    [ -z "$ext" ] && continue
-    EXTRACTOR="$FIXTURES_DIR/../$ext"
+while IFS='|' read -r proto sample expected; do
+    [ -z "$proto" ] && continue
+    EXTRACTOR=".harness/extractors/$proto/extract.sh"
     SAMPLE="$FIXTURES_DIR/$sample"
     EXPECTED="$FIXTURES_DIR/expected/$expected"
     if [ ! -f "$EXTRACTOR" ] || [ ! -d "$SAMPLE" ] || [ ! -f "$EXPECTED" ]; then
-        echo "  [SKIP] ${ext}（缺 fixture 组件，跳过）"
+        echo "  [SKIP] ${proto}（缺 fixture 组件，跳过）"
         continue
     fi
     R_TMP=$(mktemp -d)
@@ -116,20 +116,20 @@ while IFS='|' read -r ext sample expected; do
         R_EXPECTED=$(jq 'length' "$EXPECTED" 2>/dev/null || echo 0)
         R_ACTUAL=$(jq 'length' "$R_FILE" 2>/dev/null || echo 0)
         if [ "$R_ACTUAL" -ge "$R_EXPECTED" ] 2>/dev/null; then
-            echo "  [PASS] ${ext}（${R_ACTUAL} >= ${R_EXPECTED}）"
+            echo "  [PASS] ${proto}（${R_ACTUAL} >= ${R_EXPECTED}）"
         else
-            echo "  [FAIL] ${ext} 召回下降（${R_ACTUAL} < ${R_EXPECTED}）"
+            echo "  [FAIL] ${proto} 召回下降（${R_ACTUAL} < ${R_EXPECTED}）"
             REGRESS_FAILED=1
         fi
     else
-        echo "  [FAIL] $ext 执行失败（回归）"
+        echo "  [FAIL] $proto 执行失败（回归）"
         REGRESS_FAILED=1
     fi
     rm -rf "$R_TMP"
 done <<'EOF'
-extract-http-client.sh|sample-http-client|http-client.json
-extract-mq.sh|sample-mq|mq.json
-extract-custom.sh|sample-socket|socket.json
+http-client|sample-http-client|http-client.json
+mq|sample-mq|mq.json
+custom|sample-socket|socket.json
 EOF
 if [ "$REGRESS_FAILED" -eq 0 ]; then
     echo "  [PASS] 回归全部通过"

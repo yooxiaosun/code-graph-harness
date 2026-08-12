@@ -81,7 +81,7 @@ E3(calibration-analyzer) → G-E3 → 判定表分流
 
 ```
 数据面（只增不改）                 能力面（可自我演化）
-output/nodes/edges/calibration     scripts/extractors/
+output/nodes/edges/calibration     .harness/extractors/
         │                                  ▲
         │  E3 发现覆盖缺口                  │ E4 持久化新提取器
         ▼                                  │
@@ -101,7 +101,7 @@ output/nodes/edges/calibration     scripts/extractors/
 
 **`harness-conf` 是本工程唯一活跃的治理层**，定义提取运营流程（阶段 E1-E5、角色、状态机、领域门禁 G-E1 至 G-E5）。
 
-- **工程门禁**：位于 `scripts/gates/G*-verify.sh`，为可运行的 bash 检查脚本。Gate profile 通过 `scripts/gates/all.sh` 调用，与 harness-conf 协作。
+- **工程门禁**：位于 `scripts/gates/G*-verify.sh`，为可运行的 bash 检查脚本。Gate profile 通过 `scripts/gates/all.sh` 调用，与 harness-conf 协作。完整门禁清单：G0/G4/G5（工程默认）+ GE2.5（框架分析）+ GE3（提取质量）+ GP1-GP5（提取脚本 fixture 验证）。
 - **复用关系**：G0 被 `gate-criteria.md` 引用复用（G-E1 构建门禁）。
 - **曾经存在的 `.scale/`**：SCALE OS 配置器生成的通用工程治理层（governance.yaml / workflow.json / quality-contract.json），面向 Python 工具链假设（ruff/pytest/mypy），对当前 Bash 项目不适用，已删除；其治理内容已迁移至 `docs/standards/ENGINEERING_RULES.md`（工程红线）与 `docs/workflow/QUALITY_CONTRACT.md`（任务分级与交付物契约）。
 

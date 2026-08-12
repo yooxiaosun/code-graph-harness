@@ -12,14 +12,14 @@ if [ ! -x scripts/validate-config.sh ] || [ ! -x scripts/gates/all.sh ] || [ ! -
 fi
 
 # ── GP1-GP5 fixture verification: gate-criteria.md MUST ──
-EXTRACTOR_DIR="scripts/extractors/nonstandard"
-VERIFY_DIR="$EXTRACTOR_DIR/verify"
-for extractor in "$EXTRACTOR_DIR"/extract-*.sh; do
+GATES_DIR="scripts/gates"
+for proto in http-client mq custom; do
+    extractor=".harness/extractors/$proto/extract.sh"
     [ -f "$extractor" ] || continue
     echo ""
-    echo "── Fixture verification: $(basename "$extractor") ──"
+    echo "── Fixture verification: $proto ($extractor) ──"
     for gp in GP1 GP2 GP3 GP4 GP5; do
-        gp_script="$VERIFY_DIR/${gp}-verify.sh"
+        gp_script="$GATES_DIR/${gp}-verify.sh"
         if [ ! -f "$gp_script" ]; then
             echo "[SKIP] $gp: missing $gp_script"
             failures=$((failures + 1))
@@ -38,7 +38,7 @@ done
 GRAPH_SMOKE_DIR="scripts/tests/.graph-smoke"
 GRAPH_NODES_DIR="$GRAPH_SMOKE_DIR/nodes"
 GRAPH_EDGES_DIR="$GRAPH_SMOKE_DIR/edges"
-GRAPH_FIXTURE="scripts/extractors/nonstandard/fixtures/sample-http-client"
+GRAPH_FIXTURE=".harness/fixtures/sample-http-client"
 GRAPH_SVC="smoke-svc"
 
 echo ""
@@ -46,7 +46,7 @@ echo "── Graph Pipeline Smoke (build-nodes → build-edges) ──"
 rm -rf "$GRAPH_SMOKE_DIR"
 mkdir -p "$GRAPH_NODES_DIR" "$GRAPH_EDGES_DIR"
 
-if bash scripts/extractors/graph/build-nodes.sh "$GRAPH_SVC" "$GRAPH_FIXTURE" "$GRAPH_NODES_DIR" >/dev/null 2>&1; then
+if bash scripts/graph/build-nodes.sh "$GRAPH_SVC" "$GRAPH_FIXTURE" "$GRAPH_NODES_DIR" >/dev/null 2>&1; then
     echo "[PASS] build-nodes.sh ran with minimal fixture input"
 else
     echo "[FAIL] build-nodes.sh returned non-zero"
@@ -60,7 +60,7 @@ else
     failures=$((failures + 1))
 fi
 
-if bash scripts/extractors/graph/build-edges.sh "$GRAPH_NODES_DIR" "$GRAPH_EDGES_DIR" >/dev/null 2>&1; then
+if bash scripts/graph/build-edges.sh "$GRAPH_NODES_DIR" "$GRAPH_EDGES_DIR" >/dev/null 2>&1; then
     echo "[PASS] build-edges.sh ran on smoke nodes"
 else
     echo "[FAIL] build-edges.sh returned non-zero"

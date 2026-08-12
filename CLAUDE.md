@@ -47,11 +47,13 @@
 
 | 资源 | 路径 |
 |------|------|
+| 工程设计 v2 | `harness-conf/DESIGN-V2.md` |
 | 主编排脚本 | `scripts/pipeline.sh` |
 | 仓库与协议配置 | `repos.yaml` |
 | 全局状态机 | `docs/status/state.yaml` |
 | 全局审计日志 | `docs/status/progress.md` |
 | 图谱产物 | `output/knowledge-graph/latest.json` |
-| 校准报告 | `output/calibration/calibration-report.json` |
+| 统计报告 | `output/calibration/calibration-report.json` |
 | 图谱 Schema | `schemas/knowledge-graph.schema.json` |
-| AI 介入模板 | `templates/{analyze-pattern,generate-script,persist-rule}.md` |
+| 框架分析格式 | `schemas/profile.schema.yaml` |
+| AI 介入模板 | `templates/{analyze-framework,analyze-pattern,generate-script,persist-rule}.md` |

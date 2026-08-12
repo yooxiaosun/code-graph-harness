@@ -2,25 +2,18 @@
 set -euo pipefail
 
 # ═══════════════════════════════════════════════════════════
-# Harness Gate Runner — supports G0–G22 + 4 profiles
-# Reference: gate-criteria.md for extraction-specific gates (GE1-GE5)
+# Harness Gate Runner — 工程门禁 G0/G4/G5（v2 精简后唯一默认集）
+# 流程门禁见 gate-criteria.md（G-E1 至 G-E5）；自适应门禁见 GP1-GP5
 # ═══════════════════════════════════════════════════════════
 #
-# This project's default profile: fast-lane
-#
 # Usage:
-#   bash scripts/gates/all.sh                            # fast-lane (project default)
-#   bash scripts/gates/all.sh --profile fast-lane        # S-level: typo / comment / config
-#   bash scripts/gates/all.sh --profile standard         # M-level: 2-5 files behavior change
-#   bash scripts/gates/all.sh --profile full             # L-level: cross-module / refactor
-#   bash scripts/gates/all.sh --profile comprehensive    # CRITICAL: auth / money / migration
+#   bash scripts/gates/all.sh                            # 默认：G0 G4 G5
 #   bash scripts/gates/all.sh --dry-run                  # check which scripts exist, don't run
-#   bash scripts/gates/all.sh --gate G2                  # run a single gate
-#   bash scripts/gates/all.sh --gates G1,G2,G5           # run a subset of gates
-#   bash scripts/gates/all.sh --allow-skip              # exit 0 even when gates are skipped
+#   bash scripts/gates/all.sh --gate G4                  # run a single gate
+#   bash scripts/gates/all.sh --gates G0,G5              # run a subset of gates
+#   bash scripts/gates/all.sh --allow-skip               # exit 0 even when gates are skipped
 
 DRY_RUN=0
-PROFILE="fast-lane"
 SINGLE_GATE=""
 SUBSET=""
 ALLOW_SKIP=0
@@ -28,16 +21,20 @@ ALLOW_SKIP=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run)     DRY_RUN=1; shift ;;
-    --profile)     PROFILE="$2"; shift 2 ;;
+    --profile)
+      if [ "${2:-}" != "fast-lane" ]; then
+        echo "[FAIL] v2 已移除门禁 profile 体系，仅保留默认集 G0 G4 G5" >&2
+        exit 2
+      fi
+      shift 2 ;;
     --gate)        SINGLE_GATE="$2"; shift 2 ;;
     --gates)       SUBSET="$2"; shift 2 ;;
     --allow-skip)  ALLOW_SKIP=1; shift ;;
     -h|--help)
       cat <<EOF
 Usage: $0 [options]
-  --profile <name>   fast-lane | standard | full | comprehensive (default: fast-lane)
-  --gate <id>        run a single gate (e.g. G2)
-  --gates <ids>      comma-separated subset (e.g. G1,G2,G5)
+  --gate <id>        run a single gate (e.g. G4)
+  --gates <ids>      comma-separated subset (e.g. G0,G5)
   --allow-skip       exit 0 when gates are skipped (default: exit 2)
   --dry-run          check scripts exist, don't run
   -h, --help         show this help
@@ -53,16 +50,10 @@ if [ -n "$SINGLE_GATE" ]; then
 elif [ -n "$SUBSET" ]; then
   IFS=',' read -ra GATES <<< "$SUBSET"
 else
-  case "$PROFILE" in
-    fast-lane)       GATES=(G0 G4 G5) ;;
-    standard)        GATES=(G2 G4 G5 G6 G16) ;;
-    full)            GATES=(G1 G2 G3 G4 G5 G6 G16 G17 G18) ;;
-    comprehensive)   GATES=(G1 G2 G3 G4 G5 G6 G7 G16 G17 G18 G19 G20) ;;
-    *) echo "[FAIL] unknown profile: $PROFILE" >&2; exit 2 ;;
-  esac
+  GATES=(G0 G4 G5)
 fi
 
-echo "=== Harness Gate Runner (profile=$PROFILE, gates=${GATES[*]}) ==="
+echo "=== Harness Gate Runner (gates=${GATES[*]}) ==="
 echo ""
 
 failures=0
@@ -119,4 +110,4 @@ if [ "$skipped" -gt 0 ]; then
   exit 2
 fi
 
-echo "[OK] all gates passed (profile=$PROFILE)"
+echo "[OK] all gates passed"

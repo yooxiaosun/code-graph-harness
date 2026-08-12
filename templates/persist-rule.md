@@ -15,7 +15,7 @@ confidence: 0.0-1.0
 ```
 
 ### 生成脚本
-`scripts/extractors/nonstandard/extract-{pattern_name}.sh`
+`.harness/extractors/{pattern_name}/extract.sh`
 
 ### 验证结果
 - GP1 (Syntax): {pass/fail}
@@ -28,7 +28,8 @@ confidence: 0.0-1.0
 
 ### 1. Copy Script to Canonical Location
 ```bash
-# Already in place at scripts/extractors/nonstandard/extract-{pattern_name}.sh
+# 唯一晋级通道：bash scripts/promote-extractor.sh {pattern_name}
+# 晋级后落位 .harness/extractors/{pattern_name}/extract.sh
 ```
 
 ### 2. Register Pattern in .harness/patterns/
@@ -46,7 +47,7 @@ Create `.harness/patterns/{pattern_name}.md` with:
 {summarized_from_analysis}
 
 ## Extraction Script
-scripts/extractors/nonstandard/extract-{pattern_name}.sh
+.harness/extractors/{pattern_name}/extract.sh
 
 ## Verification History
 | Gate | Result | Date |
@@ -69,11 +70,9 @@ Add to `nonstandard.scanners`:
         - "{key_method_call}"
 ```
 
-### 4. Add to Pipeline Phase 4
-In `scripts/pipeline.sh` Phase 4, add:
-```bash
-bash "$EXTRACTORS_DIR/nonstandard/extract-{pattern_name}.sh" "$SERVICE_NAME" "$REPO_PATH" "$OUTPUT_DIR/raw" &
-```
+### 4. Pipeline Integration
+`scripts/graph/build-nodes.sh` 自动扫描 `.harness/extractors/*/extract.sh`，晋级后无需手工接入；
+如需 tags 类串行行为等特殊调度，由人工评审后修改 build-nodes.sh。
 
 ## After Persistence
 - Delete temporary test output from `output/raw/test-service/`

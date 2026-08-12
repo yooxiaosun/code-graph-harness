@@ -5,6 +5,54 @@
 
 ---
 
+## [v2.0.0] - 2026-08-11 - 工程设计 v2（分层架构 + AI 决策 + 框架分析）
+
+### 核心变更
+
+**1. 分层架构（§1-§2）**
+- Harness 框架（人维护的不变层）与 Harness 产出物（AI 生成的可变层）明确分离
+- Bash 定位为原子能力层：18 个能力单元，不做任何「要不要/好不好/为什么」判断
+- AI 定位为决策层：D1 提取计划 / D2 质量判定 / D3 自适应编码 三个决策点
+
+**2. 目录重组（§6）**
+- 提取器从 `scripts/extractors/` 迁移至 `.harness/extractors/{proto}/extract.sh`
+- 图谱内核从 `scripts/extractors/graph/` 迁移至 `scripts/graph/`
+- 基础库从 `scripts/extractors/base/` 迁移至 `scripts/base/`
+- GP 门禁从 `scripts/extractors/nonstandard/verify/` 迁移至 `scripts/gates/GP*-verify.sh`
+- fixtures 从 `scripts/extractors/nonstandard/fixtures/` 迁移至 `.harness/fixtures/`
+- 删除 14 个死门禁（G1/G2/G3/G6/G7/G8/G9/G16-G22）+ dead `build-graph.sh`
+- `build-nodes.sh` 改为动态扫描 `.harness/extractors/*/extract.sh`
+
+**3. D2 质量判定（Phase B）**
+- `calibrate.sh` 拆分为 `compute-stats.sh`（bash 纯算数，不含 rating）+ D2 AI 判定（calibration-analyzer）
+- GE3 门禁适配：移除 rating 检查，保留 match_rate / blockers / overallScore
+- 评级规则（GOOD≥0.90 / FAIR≥0.70 / POOR<0.70）移至 D2 AI 决策点
+
+**4. 框架分析层（Phase C）**
+- 新增 `templates/analyze-framework.md`：5 维度分析清单（构建依赖/注解/XML/代码/配置）
+- 新增 `schemas/profile.schema.yaml`：框架指纹产出格式
+- 新增 `scripts/gates/GE2.5-framework-analysis.sh`：三级回退门禁（通过/部分失败/完全失败）
+- `build-nodes.sh` 增加 D1 提取计划：按 profile 选择提取器，失败自动回退全量
+- pipeline-executor agent 文档更新 D1 职责
+
+**5. E4 产出范围扩展（Phase D）**
+- adapter-developer 从「只写提取器」扩展为三类产物：代码层/分析层/知识层
+- 新增 `scripts/promote-sdk.sh`：SDK 扩展晋级闸门（staging → scripts/base/）
+- 新增 `scripts/gates/GE2.5-framework-analysis.sh`
+
+### 文档对齐
+
+- 新增 `harness-conf/DESIGN-V2.md`：工程设计唯一真源文档
+- 更新 7 个文档至 v2 路径与术语：ARCHITECTURE.md / gate-criteria.md / extraction-flow.md / roles.md / nightly-mode.md / CLAUDE.md / INDEX.md / self-adaptation.md
+- EXTRACTION-WORKFLOW.md 路径全局刷新
+
+### 向后兼容
+
+- 无 profile 场景自动回退全部提取器（= v1 行为，nightly 零退化）
+- 所有 v1 提取能力保留（dubbo/sofarpc/grpc/rest/http-client/mq/custom/tags）
+
+---
+
 ## [v1.2.0] - 2026-08-10 - Nightly AI 驱动模式（E4 三道防线）
 
 ### 核心变更

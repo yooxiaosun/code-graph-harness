@@ -10,6 +10,7 @@ status: Baseline
 
 > **职责说明**：本文件是 graph-orchestrator 流程召回入口 + 文档体系导航。
 > **Agents架构约束**：见 `harness-conf/ARCHITECTURE.md`
+> **工程设计 v2**：见 `harness-conf/DESIGN-V2.md`（新）
 > **版本演进**：见 `harness-conf/CHANGELOG.md`
 > **提取器实现细节**：见项目根 `EXTRACTION-WORKFLOW.md`
 

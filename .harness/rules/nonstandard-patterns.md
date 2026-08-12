@@ -53,7 +53,7 @@
 2. **AI 分析** (`templates/analyze-pattern.md`): 判定是否为 RPC 调用，识别模式特征
 3. **脚本生成** (`templates/generate-script.md`): 生成 bash 提取脚本
 4. **验证门禁 GP1-5**: 沙箱执行 + 输出校验 + 召回率 + 回归检测
-5. **持久化** (`templates/persist-rule.md`): 通过后写入 `scripts/extractors/nonstandard/` 和 `.harness/patterns/`
+5. **持久化** (`templates/persist-rule.md`): 通过后写入 `.harness/extractors/<pattern>/` 和 `.harness/patterns/`
 
 ## Output Format
 输出到 `output/raw/{service-name}/nonstandard.json`，使用 `NonstandardEdge` schema:

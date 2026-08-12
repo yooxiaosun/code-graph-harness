@@ -105,7 +105,7 @@ status: Baseline
 
 | 防线 | 机制 | 效果 |
 |------|------|------|
-| **1. 权限收束** | opencode.json 给 `adapter-developer` 配 Agent 级 permission：edit 仅 `.harness/staging/**`；bash 仅验证脚本；`promote-extractor.sh`、`scripts/extractors/**`、`repos.yaml`、`output/**` 全部 deny | 权限层面不存在写坏正式目录的可能 |
+| **1. 权限收束** | opencode.json 给 `adapter-developer` 配 Agent 级 permission：edit 仅 `.harness/staging/**`；bash 仅验证脚本；`promote-extractor.sh`、`.harness/extractors/**`、`repos.yaml`、`output/**` 全部 deny | 权限层面不存在写坏正式目录的可能 |
 | **2. 产物自证** | 交付包强制三件套（脚本+样例+期望输出）；`scripts/e4-verify-bundle.sh` 一键跑 GP1-GP5 + 既有提取器回归 | AI 必须自证正确，门禁不过产物不离开 staging |
 | **3. 晋级闸门** | `scripts/promote-extractor.sh` 是唯一能写正式目录的通道（再次全量自证 + 防覆盖冲突 + 记录 progress + staging 归档）；夜间默认只标记待晋级 | 生效动作可追溯、可回退 |
 
@@ -138,7 +138,7 @@ status: Baseline
 
 ## §6 安全边界（nightly 绝对不做）
 
-1. **不直接写** `scripts/extractors/`（E4 产物限 `.harness/staging/`，晋级仅经 promote-extractor.sh）
+1. **不直接写** `.harness/extractors/`（E4 产物限 `.harness/staging/`，晋级仅经 promote-extractor.sh）
 2. **不修改** `repos.yaml`
 3. **不修改** `harness-conf/` 任何文件
 4. **不自动豁免**任何门禁

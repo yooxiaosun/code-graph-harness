@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────
-# promote-extractor — E4 交付包晋级闸门（staging → scripts/extractors/nonstandard/）
+# promote-extractor — E4 交付包晋级闸门（staging → .harness/extractors/<pattern>/）
 # 用法: bash scripts/promote-extractor.sh <pattern>
 #   前置: .harness/staging/<pattern>/ 交付包存在且 e4-verify-bundle.sh 全绿
 # 这是唯一允许将提取器写入正式目录的通道（防线 3）。
@@ -21,9 +21,9 @@ NOW=$(date +"%Y-%m-%d %H:%M")
 STAGING_DIR=".harness/staging"
 BUNDLE_DIR="$STAGING_DIR/$PATTERN"
 ARCHIVE_DIR="$STAGING_DIR/archived"
-FORMAL_DIR="scripts/extractors/nonstandard"
-FIXTURES_DIR="$FORMAL_DIR/fixtures"
-SCRIPT_FILE="$FORMAL_DIR/extract-$PATTERN.sh"
+FORMAL_DIR=".harness/extractors"
+FIXTURES_DIR=".harness/fixtures"
+SCRIPT_FILE="$FORMAL_DIR/$PATTERN/extract.sh"
 
 # ── 0. 前置检查 ─────────────────────────────────────────────────────
 if [ ! -d "$BUNDLE_DIR" ]; then
@@ -46,6 +46,7 @@ if ! bash "$ROOT_DIR/scripts/e4-verify-bundle.sh" "$PATTERN"; then
 fi
 
 # ── 2. 晋级（脚本 + fixtures 三件套）─────────────────────────────────
+mkdir -p "$FORMAL_DIR/$PATTERN"
 mkdir -p "$FIXTURES_DIR/expected"
 mkdir -p "$ARCHIVE_DIR"
 
@@ -64,4 +65,4 @@ echo "==== Promote Complete ===="
 echo "  提取器: $SCRIPT_FILE"
 echo "  fixtures: $FIXTURES_DIR/sample-$PATTERN/ + expected/$PATTERN.json"
 echo "  已归档: $ARCHIVE_DIR/$PATTERN-$(date +%Y-%m-%d)"
-echo "  后续（人工/交互）: repos.yaml scanners 注册 + build-nodes.sh 接入"
+echo "  后续（人工/交互）: repos.yaml scanners 注册（build-nodes.sh 自动扫描 .harness/extractors/ 无需接入）"

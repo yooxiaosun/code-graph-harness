@@ -39,6 +39,8 @@
       "scripts/**": "allow",
       "repos.yaml": "allow",
       ".harness/patterns/**": "allow",
+      ".harness/extractors/**": "allow",
+      ".harness/fixtures/**": "allow",
       "harness-conf/**": "allow",
       "EXTRACTION-WORKFLOW.md": "allow",
       "*": "ask"
@@ -50,18 +52,21 @@
 
   "agent": {
     "adapter-developer": {
-      "description": "E4 自适应编码：仅能在 .harness/staging/ 产出交付包，三道防线（权限收束 + 自证 + 晋级闸门）",
+      "description": "E4 自适应编码：代码产物仅能在 .harness/staging/ 产出（晋级闸门持久化），知识产物可写 .harness/rules/ 与 .harness/patterns/（content review）",
       "permission": {
         "bash": {
-          "bash scripts/extractors/nonstandard/verify/*": "allow",
+          "bash scripts/gates/GP*": "allow",
           "bash scripts/tests/run.sh": "allow",
           "bash scripts/e4-verify-bundle.sh *": "allow",
           "bash -n *": "allow",
           "bash scripts/promote-extractor.sh *": "deny",
+          "bash scripts/promote-sdk.sh *": "deny",
           "*": "deny"
         },
         "edit": {
           ".harness/staging/**": "allow",
+          ".harness/rules/**": "allow",
+          ".harness/patterns/**": "allow",
           "docs/changes/**/artifacts/E4-adapt-report.md": "allow",
           "*": "deny"
         },

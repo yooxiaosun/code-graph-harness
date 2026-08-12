@@ -55,15 +55,10 @@ else
     pass "消费者统计: total=$TOTAL_COUNT matched=$MATCHED_COUNT unresolved=$UNRESOLVED_COUNT"
 fi
 
-# 检查 4: 校准评级记录
-RATING=$(jq -r '.rating // "UNKNOWN"' "$CALIBRATION")
+# 检查 4: 完整性分数记录（v2: bash 层只算数，评级与分流由 D2 AI 判定）
 SCORE=$(jq -r '.overallScore // 0' "$CALIBRATION")
-echo "  [INFO] calibration rating=$RATING score=$SCORE"
-if [ "$RATING" = "POOR" ]; then
-    fail "rating = POOR — 完整性不足, 需进入 E4 或由 User 显式降级接受"
-else
-    pass "rating = $RATING"
-fi
+echo "  [INFO] completeness score=$SCORE — 评级（GOOD/FAIR/POOR）与分流由 D2 AI 决策（calibration-analyzer）"
+pass "overallScore 已记录"
 
 echo ""
 if [ "$FAILURES" -gt 0 ]; then

@@ -17,7 +17,7 @@
 | S | 单点小改、文案、配置调整 | — | `bash scripts/tests/run.sh` |
 | M | 功能增强、bugfix、提取器修改 | extraction report | `bash scripts/tests/run.sh`, `bash scripts/validate-config.sh` |
 | L | 新增提取器、架构变更 | plan.md, report, GP1-GP5 verification | full gate run |
-| CRITICAL | 管道核心变更、图谱 schema 修改 | plan.md, review, full gate run | `bash scripts/gates/all.sh --profile comprehensive` |
+| CRITICAL | 管道核心变更、图谱 schema 修改 | plan.md, review, full gate run | `bash scripts/gates/all.sh`（默认集 G0/G4/G5）+ `bash scripts/tests/run.sh` |
 
 ## Verification Profiles
 | Profile | Required | Success Rule |

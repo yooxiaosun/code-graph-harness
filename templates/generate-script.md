@@ -2,7 +2,7 @@
 
 ## Context
 你是 Harness 脚本生成专家。根据上一步的模式分析结果，生成一个符合 Harness 工程规范的 bash 提取脚本。
-该脚本将被持久化到 `scripts/extractors/nonstandard/` 目录并成为 Harness 的一部分。
+该脚本经 staging 自证与晋级后落位 `.harness/extractors/{pattern}/extract.sh`，成为 Harness 的一部分。
 
 ## Input
 ### 模式分析结果
@@ -13,7 +13,7 @@
 ### Harness 脚本规范
 - 使用 `#!/usr/bin/env bash` + `set -euo pipefail`
 - 接受 3 个参数: `<service-name> <repo-path> [output-dir]`
-- source 基础工具: `../base/java-parser.sh` 和 `../base/json-writer.sh`
+- source 基础工具: 通过 `ROOT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"` 定位工程根，source `$ROOT_DIR/scripts/base/java-parser.sh` 和 `$ROOT_DIR/scripts/base/json-writer.sh`
 - 输出到 `$OUTPUT_DIR/$SERVICE_NAME/nonstandard-{protocol}.json`
 - 每个接口节点使用 `node_interface_json` 函数
 - 最后打印 `[NONSTD-{PROTOCOL}] $SERVICE_NAME: N items detected`
@@ -24,8 +24,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../base/java-parser.sh"
-source "$SCRIPT_DIR/../base/json-writer.sh"
+ROOT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+source "$ROOT_DIR/scripts/base/java-parser.sh"
+source "$ROOT_DIR/scripts/base/json-writer.sh"
 
 SERVICE_NAME="${1:-}"
 REPO_PATH="${2:-.}"

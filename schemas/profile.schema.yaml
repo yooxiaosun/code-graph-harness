@@ -1,0 +1,66 @@
+# profile.schema.yaml — 框架分析产出格式定义（v2 新增，人维护的不变层）
+# 约束对象: output/analysis/{service}-profile.yaml（D1 决策点产出）
+# 验收门禁: scripts/gates/GE2.5-framework-analysis.sh（G-E2.5）
+
+schema_version: "1.0"
+target: "output/analysis/{service}-profile.yaml"
+
+required_fields:
+  service:
+    type: string
+    description: 服务名，必须与 repos.yaml 中的服务标识一致
+    required: true
+  framework_signals:
+    type: list
+    required: true
+    item_fields:
+      protocol:
+        type: string
+        enum: [dubbo, sofarpc, grpc, rest, http-client, mq, custom, UNKNOWN-STACK]
+        required: true
+      confidence:
+        type: string
+        enum: [high, medium, low, none]
+        required: true
+      declaration_style:
+        type: string
+        enum: [annotation, xml, code, config]
+        required: false        # confidence=none 时可省略
+      review_basis:
+        type: list[string]
+        required_if: "confidence in [high, medium]"   # 每个 medium+ 信号 ≥1 条证据
+        min_items: 1
+        description: 证据条目，格式 "<文件路径>:<位置> <具体信号>"
+  extraction_plan:
+    type: object
+    required: true
+    fields:
+      extractors:
+        type: list[string]
+        enum_items: [dubbo, sofarpc, grpc, rest, http-client, mq, custom, tags]
+        required: true
+        description: 本次应执行的提取器清单（medium+ 协议对应项 + 恒跑项 custom/tags）
+      skip_reason:
+        type: string
+        required: true
+        description: 被跳过提取器的理由（引用对应协议的 confidence 结论）
+  unknowns:
+    type: list
+    required: true              # 无未知项时写 unknowns: []
+    item_fields:
+      signal:
+        type: string
+        required: true
+      files:
+        type: list[string]
+        required: true
+      risk:
+        type: string
+        required: true
+
+gate_behavior:                    # 与 gate-criteria.md §G-E2.5 一致
+  pass: "全部必填字段合法 + medium+ 信号均有 review_basis → exit 0，按 plan 精准提取"
+  partial: "evidence 缺失 / review 报告未产出 → exit 2，警告 + 回退全部提取器"
+  complete_failure: "profile 不存在 / YAML 无法解析 / 必填字段缺失 → exit 1，静默回退全部提取器"
+
+companion_artifact: "output/analysis/{service}-profile-review.md"   # 自审报告（分析范围/决策记录/覆盖完整度自评）

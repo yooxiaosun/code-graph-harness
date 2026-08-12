@@ -46,6 +46,14 @@ status: Baseline
 
 **执行角色**：graph-orchestrator spawn pipeline-executor
 
+**D1 框架分析（v2 新增，克隆后、提取前）**：
+1. pipeline-executor 按 `templates/analyze-framework.md` 对每个仓库做框架指纹分析
+2. 产出 `output/analysis/<service>-profile.yaml` + `<service>-profile-review.md`
+3. G-E2.5 验收（`scripts/gates/GE2.5-framework-analysis.sh`）三级回退：
+   - 通过 → 按 extraction_plan 精准提取（build-nodes.sh 自动读取）
+   - 部分失败 → 警告 + 回退全部提取器
+   - 完全失败 / 无 profile → 静默回退全部提取器（= v1 行为，nightly 无 AI 场景零退化）
+
 **执行模式**：
 
 | 模式 | 命令 | 适用 |
@@ -56,22 +64,25 @@ status: Baseline
 
 **交接块内容**：执行模式、任务编号、交付物路径要求、失败上报要求。
 
-**G-E2 门禁**：见 `gate-criteria.md §G-E2`。
+**G-E2 门禁**：见 `gate-criteria.md §G-E2`；**G-E2.5 门禁**：见 `gate-criteria.md §G-E2.5`。
 
-## §4 E3 校准分析
+## §4 E3 校准分析（D2 质量判定决策点）
 
 **执行角色**：graph-orchestrator spawn calibration-analyzer
 
-**判定表**（唯一数据源：`output/calibration/calibration-report.json` + `output/edges/edge-stats.json`）：
+**v2 分工**：bash 层 `scripts/graph/compute-stats.sh` 只算数（5 项检查数值 + blockers，无 rating 字段）；
+评级（score ≥0.90 GOOD / ≥0.70 FAIR / 其余 POOR）与分流判定由 calibration-analyzer 的 D2 决策完成。
+
+**判定表**（唯一数据源：`output/calibration/calibration-report.json` + `output/edges/edge-stats.json`，若存在另读 `output/analysis/<service>-profile.yaml`）：
 
 | 条件 | 判定 | 后续 |
 |------|------|------|
-| rating ∈ {GOOD, FAIR} 且 blockers 为空 且无 unknown pattern | **E5** | 进入发布门禁 |
-| rating == POOR | **E4** | 附 unresolved 归因清单 |
-| 存在 `[AI-REQUIRED]` unknown pattern | **E4** | 附模式线索清单（文件路径 + import） |
-| unresolved 主因为"非标模式未覆盖" | **E4** | 附缺失协议特征 |
-| blockers 非空（提供者冲突等） | **升级 User** | 附证据与处理选项 |
+| blockers 非空（提供者冲突等） | **升级 User** | 附证据与处理选项（优先于其他判定） |
 | 校准数据文件缺失/损坏 | **升级 User** | 退回 E2 或人工介入 |
+| D2 评级 ∈ {GOOD, FAIR} 且无 unknown pattern | **E5** | 进入发布门禁 |
+| D2 评级 == POOR | **E4** | 附 unresolved 归因清单 |
+| 存在 `[AI-REQUIRED]` unknown pattern | **E4** | 附模式线索清单（文件路径 + import） |
+| unresolved 主因为“非标模式未覆盖” | **E4** | 附缺失协议特征 |
 
 **G-E3 门禁**：见 `gate-criteria.md §G-E3`。
 
