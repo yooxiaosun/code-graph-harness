@@ -5,6 +5,46 @@
 
 ---
 
+## [v2.2.0] - 2026-08-12 - md-first 哲学贯彻 + 文件命名规范化
+
+### 核心变更
+
+**1. 确立 md-first 开发规范（`DEVELOPMENT_STANDARD.md`，根目录）**
+- Harness 核心资产是 md 模板与 Schema，bash 只承担确定性机械操作
+- 判定标准：结果唯一确定 + 不涉及"要不要/为什么/如何选" → bash；否则 md
+- 反模式：bash 内做策略判断/收敛判断/调度探测/合并算法
+
+**2. 撤销过度 bash 化（v2.1 修正）**
+- 删除 `scripts/base/merge-dual.sh`（合并策略硬编码）→ 合并规则移至 `templates/dual-dimension-merge.md`（AI 自主执行）
+- 简化 `scripts/base/run-ai-analysis.sh`：去 pass/continue/bail-out 判定，只做 state.yaml 字段提取（AI 读 `ai-analysis-harness.md` 自主判断收敛）
+- 重构 `scripts/graph/build-nodes.sh`：纯参数化（`--plan`/`--no-tags`），去自动探测 + D1 判断（调度决策移至 `templates/build-nodes-scheduling.md`）
+- 重构 `scripts/pipeline.sh`：Phase 2.5 改占位（校准汇总由 calibration-analyzer 按 md 后驱），去 AI 维度统计判断
+
+**3. 新增 3 个 md 模板（策略层）**
+- `templates/dual-dimension-merge.md`：双维度合并规则（取并集 + 置信度分级 + 协议级加权 + 矛盾处理）
+- `templates/build-nodes-scheduling.md`：Layer 1 调度决策（single/dual + --plan + tags）
+- `templates/calibration-summary.md`：Phase 2.5 校准汇总（指标定义 + 解读规则 + 下游触发）
+
+**4. 文件命名规范化**
+- `CLAUDE.md` → `HARNESS.md`（vendor-neutral，内网不使用 claude 命名）
+- 更新全部引用：opencode.json / .agent/report.json / DESIGN-V2.md / QUALITY_CONTRACT.md / INDEX.md
+
+**5. Agent 文档对齐**
+- pipeline-executor：新增调度决策职责 + Phase 2.5 移交
+- calibration-analyzer：新增双维度合并 + 校准汇总职责
+
+### 文档对齐
+- `DEVELOPMENT_STANDARD.md` 根目录新增（md-first 开发规范唯一真源）
+- `HARNESS.md` 新增「开发方法论纪律」硬约束
+- DESIGN-V2.md §12.5/§12.6 更新为 md-first 流程与资产清单
+
+### 向后兼容
+- build-nodes.sh 无 --plan 时全量（= v1/v2 行为）
+- pipeline.sh 单轨模式完全兼容
+- 现有 3 个 fixture + GP1-GP5 + graph smoke 全部保留
+
+---
+
 ## [v2.1.0] - 2026-08-12 - 双维度架构（脚本 × AI 交叉印证）
 
 ### 核心变更

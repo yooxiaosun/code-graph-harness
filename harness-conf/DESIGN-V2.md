@@ -36,7 +36,7 @@ Harness:         人定框架 → AI 自主执行 → 门禁验收
 | 支柱 | 载体 | 职责 |
 |------|------|------|
 | **① 提示引导** | `templates/*.md` | 告诉 AI 分析什么、从哪些维度思考、产出的格式要求 |
-| **② 边界约束** | `CLAUDE.md` 硬约束 + 模板内禁止项 + 资源上限 | 告诉 AI 不应做什么、不能越过什么、超时/超量怎么办 |
+| **② 边界约束** | `HARNESS.md` 硬约束 + 模板内禁止项 + 资源上限 | 告诉 AI 不应做什么、不能越过什么、超时/超量怎么办 |
 | **③ 产出标准** | `schemas/*`（格式定义）+ `harness-conf/workflow/gate-criteria.md`（门禁） | 定义可验证的质量标准，作为不可绕过的验收关卡 |
 
 AI 在①②的框架内自主执行，③作为不可绕过的验收关卡。
@@ -221,7 +221,7 @@ templates/persist-rule.md        → AI 归档   → rules + CHANGELOG
 | 3 | `scripts/` 中图谱内核脚本 | `match-providers` / `compute-stats` / `assemble-graph`——纯机械变换，定义了什么合成什么 |
 | 4 | `scripts/gates/` 门禁框架 | 验收标准——门禁体系的结构和验证逻辑是人维护的不变框架；具体的门禁脚本（G0/G4/G5/GE2.5/GE3/GP1-5）作为框架实例存在，AI 不可修改 |
 | 5 | `harness-conf/` 运营治理 | 流程 / 角色 / 阶段 / 门禁定义——AI 的工作流 |
-| 6 | `CLAUDE.md` + `SCALE-PROMPT.md` | Agent 行为纪律 + 硬约束 |
+| 6 | `HARNESS.md` + `SCALE-PROMPT.md` | Agent 行为纪律 + 硬约束 |
 
 ---
 
@@ -230,7 +230,7 @@ templates/persist-rule.md        → AI 归档   → rules + CHANGELOG
 ```
 harness/
 │
-├── CLAUDE.md                        # Agent 入口 + 硬约束
+├── HARNESS.md                       # Agent 入口 + 硬约束
 ├── SCALE-PROMPT.md                  # Agent 行为纪律
 ├── repos.yaml                       # 仓库 + 协议配置
 │
@@ -497,36 +497,48 @@ E2 执行:
 
 Bail-out 严格不猜测（Q-Escape=A）：达上限/flip-flop≥2/自报/超时 → 加入人工确认包，不产出 confidence 判断。
 
-### 12.5 双维度流程
+### 12.5 双维度流程（v2.2 md-first：策略在 md，bash 只机械）
 
 ```
-D1 框架分析 (profile.yaml) 
-    → build-nodes.sh 双轨:
-        脚本维度 → output/nodes-script/<svc>/
-        AI 维度  → output/nodes-ai/<svc>/   (自动探测)
-        合并      → output/nodes/<svc>/      (merge-dual.sh: 置信度分级+去重)
+D1 框架分析 (profile.yaml)
+    → AI 调度决策 (templates/build-nodes-scheduling.md):
+        build-nodes.sh 参数化调用（--plan 由 AI 决策传入）
+        单轨 → output/nodes/<svc>/ 直写
+        双轨 → 脚本维度落 output/nodes-script/<svc>/
+    → AI 双维度合并 (templates/dual-dimension-merge.md):
+        合并 nodes-script + nodes-ai → output/nodes/<svc>/   (置信度分级+去重)
+        矛盾节点 → output/reviews/<svc>/contradictions.json
+    → AI 校准汇总 (templates/calibration-summary.md):
+        产出 output/calibration/dual-summary.json
     → GE3 双维度门禁:
         脚本维: match_rate/blockers/schema/C-E1
         AI 维: 双维度一致性可解释 + 实质验收
     → 人工确认包 (output/reviews/human-review-<date>.md)
 ```
 
-### 12.6 新增资产清单
+### 12.6 新增资产清单（v2.2 md-first 重构后）
 
-| 资产 | 位置 |
-|------|------|
-| 节点 Schema (v2.1) | `schemas/node.schema.json` |
-| 边 Schema (v2.1) | `schemas/edge.schema.json` |
-| AI 分析 Harness 约束 | `templates/ai-analysis-harness.md` |
-| 双维度二轮校准模板 | `templates/dual-pass-review.md` |
-| 低置信度调查模板 | `templates/low-conf-drill.md` |
-| 人工确认包模板 | `templates/generate-human-review.md` |
-| 文件扫描原子能力 | `scripts/base/scan-files.sh` |
-| JSON 合并原子能力 | `scripts/base/merge-json.sh` |
-| Schema 校验原子能力 | `scripts/base/validate-schema.sh` |
-| AI 迭代驱动 | `scripts/base/run-ai-analysis.sh` |
-| 双维度合并 | `scripts/base/merge-dual.sh` |
+| 资产 | 位置 | 层 |
+|------|------|:---:|
+| 节点 Schema | `schemas/node.schema.json` | 契约 |
+| 边 Schema | `schemas/edge.schema.json` | 契约 |
+| AI 分析 Harness 约束 | `templates/ai-analysis-harness.md` | md |
+| 双维度二轮校准模板 | `templates/dual-pass-review.md` | md |
+| 低置信度调查模板 | `templates/low-conf-drill.md` | md |
+| 人工确认包模板 | `templates/generate-human-review.md` | md |
+| **双维度合并模板** | `templates/dual-dimension-merge.md` | md |
+| **调度决策模板** | `templates/build-nodes-scheduling.md` | md |
+| **校准汇总模板** | `templates/calibration-summary.md` | md |
+| 文件扫描原子能力 | `scripts/base/scan-files.sh` | bash |
+| JSON 合并原子能力 | `scripts/base/merge-json.sh` | bash |
+| Schema 校验原子能力 | `scripts/base/validate-schema.sh` | bash |
+| state 字段提取工具 | `scripts/base/run-ai-analysis.sh` | bash |
+
+> **v2.2 变更**：原 `scripts/base/merge-dual.sh`（策略硬编码）已删除，合并策略移至
+> `templates/dual-dimension-merge.md`（AI 自主执行）；`build-nodes.sh` 改为纯参数化
+> 机械工具（调度决策在 `templates/build-nodes-scheduling.md`）；`pipeline.sh` Phase 2.5
+> 改为占位（校准汇总由 calibration-analyzer 按 md 后驱）。详见 `DEVELOPMENT_STANDARD.md`。
 
 ---
 
-> **状态**：Phase A-D 实施完成，Phase E 文档对齐完成。v2.0.0 激活。
+> **状态**：Phase A-D 实施完成，Phase E 文档对齐完成。v2.0.0 激活，v2.1 双维度架构落地，v2.2 md-first 重构完成。

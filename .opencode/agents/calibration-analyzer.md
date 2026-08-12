@@ -16,6 +16,10 @@ tools: Read, Grep, Glob, Write
   - `output/edges/edge-stats.json`（match_rate 与计数）
   - `output/edges/unresolved-consumers.json`（缺失归因）
   - `output/analysis/<service>-profile.yaml`（若存在：框架指纹上下文，提升归因精度）
+- **Phase 2.5 双维度合并（v2.2 md-first）**：pipeline 退出后，按 `templates/dual-dimension-merge.md`
+  合并 `output/nodes-script/` + `output/nodes-ai/` → `output/nodes/`，冲突节点进 contradictions.json
+- **校准汇总（v2.2）**：按 `templates/calibration-summary.md` 汇总双维度状态，
+  产出 `output/calibration/dual-summary.json`（指标提取用 `scripts/base/run-ai-analysis.sh` 机械工具）
 - 逐项解读 5 项检查（A 孤儿消费 / B 提供者冲突 / C 孤儿提供者 / D 非标置信度 / E 完整性评分）
 - **D2 评级规则**（基于 overallScore / match_rate，必须在报告中明示）：
   - score ≥ 0.90 → **GOOD**；0.70 ≤ score < 0.90 → **FAIR**；score < 0.70 → **POOR**
@@ -35,17 +39,21 @@ tools: Read, Grep, Glob, Write
   3. unresolved 归因分布表
   4. unknown pattern 线索清单（文件路径 + import 语句，供 E4 使用）
   5. 流转判定与依据
+  6. 双维度合并汇总（mode / 节点数对比 / contradiction 处置）
 - 产出 E3 交付物（nightly --ai 模式）：写入任务指定的 `output/nightly/e3-attribution-<日期>.md`；若判定需要新提取器（`[AI-REQUIRED]`），必须将模式线索写入任务指定的 `output/nightly/e4-input-<日期>.md` 文件（该文件存在即 E4 触发信号）
 
 ## 禁止（MUST NOT）
 
-- 不得修改 `output/**` 任何文件（严格只读）
+- 不得修改 `output/**` 任何文件（严格只读，双维度合并产出 `output/nodes/` 除外——那是校准分析器的写入边界）
 - 不得凭印象评级，评级必须按 D2 阈值规则从数据计算得出，每个结论必须附数据引用
+- 不得把策略逻辑加进 bash（合并/汇总规则在 md，bash 仅机械工具）
 - 不得直接编写提取器脚本（线索移交 adapter-developer）
 - 不得省略"升级 User"判定而强行放行 blocker
 
 ## 写入边界
 
+- 双维度合并：`output/nodes/**`、`output/reviews/**/contradictions.json`
+- 校准汇总：`output/calibration/dual-summary.json`、`output/analysis/<service>/calibration-summary.md`
 - 交互模式：`docs/changes/<任务编号>/artifacts/E3-calibration-analysis.md`
 - nightly 模式：`output/nightly/e3-attribution-<日期>.md`、`output/nightly/e4-input-<日期>.md`
 - 其余全部 deny（只读）

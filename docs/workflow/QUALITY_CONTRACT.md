@@ -5,7 +5,7 @@
 - Agent: Claude Code / OpenCode
 
 ## Source Of Truth
-- agentEntry: `CLAUDE.md`
+- agentEntry: `HARNESS.md`
 - workflowState: `docs/status/state.yaml`
 - runtimeCommands: `.agent/project.json`
 - qualityContract: `harness-conf/workflow/gate-criteria.md`

@@ -20,7 +20,7 @@
     "capability": {
       "supportLevel": "full",
       "memoryFiles": [
-        "CLAUDE.md"
+        "HARNESS.md"
       ],
       "configFiles": [
         ".opencode/opencode.json"

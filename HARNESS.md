@@ -49,11 +49,19 @@
 - Bail-out 时严格不给出 confidence 判断，留给人工确认
 - Profile 是协议级印证信号，不是节点级独立印证源（Q-Final=A，详见 ai-analysis-harness.md §7）
 
+### 开发方法论纪律（v2.2 新增，md-first 哲学）
+- Harness 工程的核心资产是 md 模板与 Schema，bash 只承担确定性的机械操作
+- 详见 `DEVELOPMENT_STANDARD.md`（开发规范唯一真源）
+- 任何 bash 脚本不得承担策略判断（要不要 / 为什么 / 如何选）
+- AI 能力新增时优先写成 md 模板；只有"输入 X 输出 Y 永远一样"的操作才用 bash
+- 未来策略调整只改 md，不动 bash
+
 ## 关键路径速查
 
 | 资源 | 路径 |
 |------|------|
 | 工程设计 v2 | `harness-conf/DESIGN-V2.md` |
+| 开发规范 | `DEVELOPMENT_STANDARD.md` |
 | 主编排脚本 | `scripts/pipeline.sh` |
 | 仓库与协议配置 | `repos.yaml` |
 | 全局状态机 | `docs/status/state.yaml` |
