@@ -15,6 +15,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 # jq PATH 引导（内网无系统 jq 时启用 tools/jq）
 source "$SCRIPT_DIR/base/jq-bootstrap.sh"
+# 跨平台 sed 封装（GNU/BSD）
+source "$SCRIPT_DIR/base/sed-compat.sh"
 cd "$ROOT_DIR" || exit 1
 
 TODAY=$(date +"%Y-%m-%d")
@@ -114,8 +116,8 @@ fi
 # ─────────────────────────────────────────────────────────────────────
 # 1. 初始化状态机（execution-mode: nightly）
 # ─────────────────────────────────────────────────────────────────────
-sed -i "s/^current-change: .*/current-change: nightly-$TODAY/" "$STATE_FILE"
-sed -i "s/^current-phase: .*/current-phase: E2/" "$STATE_FILE"
+sed_i "s/^current-change: .*/current-change: nightly-$TODAY/" "$STATE_FILE"
+sed_i "s/^current-phase: .*/current-phase: E2/" "$STATE_FILE"
 echo "- [$NOW] [E2] [started] nightly 模式启动（repos=${REPO_COUNT} 个）" >> docs/status/progress.md
 
 # ─────────────────────────────────────────────────────────────────────
@@ -278,8 +280,8 @@ fi
 # ─────────────────────────────────────────────────────────────────────
 # 6. 状态收口
 # ─────────────────────────────────────────────────────────────────────
-sed -i "s/^current-change: .*/current-change: null/" "$STATE_FILE"
-sed -i "s/^current-phase: .*/current-phase: null/" "$STATE_FILE"
+sed_i "s/^current-change: .*/current-change: null/" "$STATE_FILE"
+sed_i "s/^current-phase: .*/current-phase: null/" "$STATE_FILE"
 echo "- [$NOW] [归档] [completed] nightly 完成（门禁=${G_RESULT}），摘要见 $SUMMARY_FILE" >> docs/status/progress.md
 rm -f "$LOCK_FILE"
 

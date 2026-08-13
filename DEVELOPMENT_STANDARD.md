@@ -54,6 +54,8 @@
 | 工具 | 职责 | 判定标准 |
 |------|------|---------|
 | `base/scan-files.sh` | 扫描文件列表 | 机械 find |
+| `base/jq-bootstrap.sh` | jq PATH 引导（系统无 jq 时启用 tools/jq） | 机械 PATH 注入 |
+| `base/sed-compat.sh` | 跨平台 sed -i 封装（GNU/BSD 差异） | 机械探测分支 |
 | `base/merge-json.sh` | JSON 数组合并 + 去重 | 机械 jq |
 | `base/validate-schema.sh` | Schema 校验 + 路径存在 | 机械校验 |
 | `base/repo-manager.sh` | git clone/update | 机械 |

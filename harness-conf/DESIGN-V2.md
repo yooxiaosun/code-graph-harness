@@ -279,6 +279,7 @@ harness/
 │   │   └── status.sh                # 门禁目录
 │   ├── base/                        # 原子能力工具（可被 AI 扩展）
 │   │   ├── jq-bootstrap.sh          # jq PATH 引导（系统无 jq 时启用 tools/jq）
+│   │   ├── sed-compat.sh            # 跨平台 sed -i 封装（GNU/BSD）
 │   │   ├── scan-files.sh            # 文件扫描
 │   │   ├── merge-json.sh            # JSON 数组合并 + 去重
 │   │   ├── validate-schema.sh       # Schema 校验 + C-E1 证据链
