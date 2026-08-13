@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# jq PATH 引导（内网无系统 jq 时启用 tools/jq）
+source "$SCRIPT_DIR/../base/jq-bootstrap.sh"
+
 failures=0
 for file in .agent/project.json .agent/report.json; do
   node -e "JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8'))" "$file" || failures=$((failures + 1))

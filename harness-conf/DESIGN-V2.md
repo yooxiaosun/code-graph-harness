@@ -234,6 +234,8 @@ harness/
 ├── DEVELOPMENT_STANDARD.md          # 开发规范（md-first 唯一真源）
 ├── SCALE-PROMPT.md                  # Agent 行为纪律
 ├── repos.yaml                       # 仓库 + 协议配置
+├── tools/                           # 工程自带工具（内网无外网环境）
+│   └── jq                           # Linux x86-64 静态二进制（jq-bootstrap.sh 自动发现）
 │
 ├── templates/                       # ① 提示引导 + 策略层（人维护 md，AI 读后自主执行）
 │   ├── analyze-framework.md         # D1 框架分析
@@ -276,6 +278,7 @@ harness/
 │   │   ├── all.sh                   # 门禁调度器
 │   │   └── status.sh                # 门禁目录
 │   ├── base/                        # 原子能力工具（可被 AI 扩展）
+│   │   ├── jq-bootstrap.sh          # jq PATH 引导（系统无 jq 时启用 tools/jq）
 │   │   ├── scan-files.sh            # 文件扫描
 │   │   ├── merge-json.sh            # JSON 数组合并 + 去重
 │   │   ├── validate-schema.sh       # Schema 校验 + C-E1 证据链

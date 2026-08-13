@@ -17,6 +17,9 @@ fi
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR" || exit 1
 
+# jq PATH 引导（内网无系统 jq 时启用 tools/jq）
+source "$ROOT_DIR/scripts/base/jq-bootstrap.sh"
+
 BUNDLE_DIR=".harness/staging/$PATTERN"
 SCRIPT_FILE="$BUNDLE_DIR/extract-$PATTERN.sh"
 SAMPLE_DIR="$BUNDLE_DIR/fixtures/sample-$PATTERN"

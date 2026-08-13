@@ -13,6 +13,8 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+# jq PATH 引导（内网无系统 jq 时启用 tools/jq）
+source "$SCRIPT_DIR/base/jq-bootstrap.sh"
 cd "$ROOT_DIR" || exit 1
 
 TODAY=$(date +"%Y-%m-%d")

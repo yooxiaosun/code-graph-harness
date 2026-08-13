@@ -4,6 +4,8 @@ set -euo pipefail
 # Assemble: Take Layer 1 nodes + Layer 2 edges + Layer 3 calibration → final graph
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# jq PATH 引导（内网无系统 jq 时启用 tools/jq）
+source "$SCRIPT_DIR/../base/jq-bootstrap.sh"
 source "$SCRIPT_DIR/../base/json-writer.sh"
 
 NODES_DIR="${1:-output/nodes}"

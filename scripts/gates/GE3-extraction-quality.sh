@@ -10,6 +10,8 @@
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# jq PATH 引导（内网无系统 jq 时启用 tools/jq）
+source "$SCRIPT_DIR/../base/jq-bootstrap.sh"
 THRESHOLD="${1:-0.70}"
 EDGE_STATS="output/edges/edge-stats.json"
 CALIBRATION="output/calibration/calibration-report.json"

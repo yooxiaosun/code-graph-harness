@@ -6,6 +6,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GRAPH_SCRIPTS="$SCRIPT_DIR/graph"
+# jq PATH 引导（内网无系统 jq 时启用 tools/jq；机械注入, 无策略）
+source "$SCRIPT_DIR/base/jq-bootstrap.sh"
 REPO_CONFIG="${1:-repos.yaml}"
 NODES_DIR="output/nodes"
 EDGES_DIR="output/edges"
