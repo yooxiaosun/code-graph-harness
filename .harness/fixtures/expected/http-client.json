@@ -1,3 +1,0 @@
-[
-  {"id": "test-service::com.example.OrderService.http-call", "type": "interface", "name": "http-call", "parent": "test-service", "protocol": "http", "role": "consumer", "className": "com.example.OrderService", "signature": "", "path": "", "httpMethod": "", "httpPath": "", "tags": []}
-]

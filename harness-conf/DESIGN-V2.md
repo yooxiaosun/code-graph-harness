@@ -170,14 +170,16 @@ E5: gate-reviewer spawn
 
 AI 不只能写提取器。AI 可以产出架构中所有可变层的东西——代码产物、分析产物、知识产物三个层级，共 14 种产出类型。
 
-### 4.1 代码层
+### 4.1 代码层（v3.0：固化产物外置 project）
+
+> **v3.0 变更**：harness 是框架库，提取器等固化产物属**项目实例**（project/），与业务绑定。
 
 | 产物 | 存放位置 | 触发时机 | 验收门禁 |
 |------|---------|---------|:---:|
-| 提取器脚本 `extract-*.sh` | `.harness/extractors/{proto}/` | E3 发现覆盖缺口 | GP1-GP5 |
-| SDK 扩展 `scan_*.sh / parse_*.sh` | `scripts/base/` | 当前 SDK 不支持的语言/格式 | GP1-GP5 |
-| 验证脚本新门禁 | `scripts/gates/GP-*.sh` | 新协议需要新的验证标准 | GP1-GP5 |
-| 测试样本 `fixtures/*.java` | `.harness/fixtures/` | 新提取器需要测试数据 | GP4-GP5 |
+| 提取器脚本 `extract-*.sh` | `project/extractors/{proto}/` | E3 发现覆盖缺口 | GP1-GP5 + E4 评审团 |
+| SDK 扩展 `scan_*.sh / parse_*.sh` | `project/sdk/`（项目专用）；`harness/scripts/base/`（框架通用） | 当前 SDK 不支持的语言/格式 | GP1-GP5 |
+| 验证脚本新门禁 | `harness/scripts/gates/GP-*.sh` | 新协议需要新的验证标准 | GP1-GP5 |
+| 测试样本 `fixtures/*.java` | `project/fixtures/` | 新提取器需要测试数据 | GP4-GP5 |
 
 ### 4.2 分析层
 
@@ -193,8 +195,8 @@ AI 不只能写提取器。AI 可以产出架构中所有可变层的东西—�
 
 | 产物 | 存放位置 | 触发时机 | 验收标准 |
 |------|---------|---------|:---:|
-| 规则文档 `{proto}-detector.md` | `.harness/rules/` | E4 持久化新协议 | content review |
-| 发现模式 `{pattern}.md` | `.harness/patterns/` | 发现值得复用的策略 | content review |
+| 规则文档 `{proto}-detector.md` | `project/rules/` | E4 持久化新协议 | content review |
+| 发现模式 `{pattern}.md` | `project/patterns/` | 发现值得复用的策略 | content review |
 | 提取范围更新 | `docs/specs/extraction-scope.md` | E4 持久化后 | E4 流程约束 |
 | 配置演进 | `repos.yaml` 协议段 | 新框架的特征注册 | YAML 合法性 |
 | 变更日志追加 | `harness-conf/CHANGELOG.md` | 自适应完成后 | E4 流程约束 |
@@ -225,23 +227,21 @@ templates/persist-rule.md        → AI 归档   → rules + CHANGELOG
 
 ---
 
-## §6 目录结构（v2.2 刷新）
+## §6 目录结构（v3.0 刷新：harness 框架库 + project 项目实例）
 
 ```
-harness/
+harness/（框架库，纯净，跨项目通用）
 │
 ├── HARNESS.md                       # Agent 入口 + 硬约束
 ├── DEVELOPMENT_STANDARD.md          # 开发规范（md-first 唯一真源）
 ├── SCALE-PROMPT.md                  # Agent 行为纪律
 ├── repos.yaml                       # 仓库 + 协议配置
-├── tools/                           # 工程自带工具（内网无外网环境）
-│   └── jq                           # Linux x86-64 静态二进制（jq-bootstrap.sh 自动发现）
 │
-├── templates/                       # ① 提示引导 + 策略层（人维护 md，AI 读后自主执行）
+├── templates/                       # ① 提示引导 + 策略层（md，AI 读后自主执行）
 │   ├── analyze-framework.md         # D1 框架分析
-│   ├── build-nodes-scheduling.md    # Layer 1 调度决策（v2.2）
-│   ├── dual-dimension-merge.md      # 双维度合并规则（v2.2）
-│   ├── calibration-summary.md       # 校准汇总（v2.2）
+│   ├── build-nodes-scheduling.md    # Layer 1 调度决策
+│   ├── dual-dimension-merge.md      # 双维度合并规则
+│   ├── calibration-summary.md       # 校准汇总
 │   ├── ai-analysis-harness.md       # AI 迭代约束（收敛/Hard Cap/Bail-out）
 │   ├── dual-pass-review.md          # 双维度二轮校准
 │   ├── low-conf-drill.md            # 低置信度深挖
@@ -256,19 +256,17 @@ harness/
 │   ├── node.schema.json             # 节点契约（v2.1）
 │   └── edge.schema.json             # 边契约（v2.1）
 │
-├── scripts/                         # bash 机械工具层（人维护）
-│   ├── pipeline.sh                  # 主编排（8 阶段骨架，无策略）
+├── scripts/                         # bash 机械工具层（框架运算层）
+│   ├── pipeline.sh                  # 主编排（8 阶段骨架，extraction-flow 默认实现）
 │   ├── nightly.sh                   # 夜间无人值守入口
-│   ├── e4-verify-bundle.sh          # E4 交付包验证
-│   ├── promote-extractor.sh         # 提取器晋级闸门
+│   ├── e4-verify-bundle.sh          # E4 交付包验证（门禁性质）
 │   ├── promote-sdk.sh               # SDK 扩展晋级闸门
-│   ├── graph/
-│   │   ├── build-nodes.sh           # Layer 1 执行（--plan 参数化，无判断）
+│   ├── graph/                       # 通用图算法（D2：留框架）
 │   │   ├── build-edges.sh           # Layer 2 提供者池匹配 + 边产出
 │   │   ├── compute-stats.sh         # Layer 3 算统计数（无 rating）
 │   │   ├── assemble-graph.sh        # 图谱拼装
 │   │   └── merge-graphs.sh          # 增量合并
-│   ├── gates/
+│   ├── gates/                       # 验收门禁（D3：留框架）
 │   │   ├── G0-verify.sh             # 构建/依赖
 │   │   ├── G4-verify.sh             # Lint
 │   │   ├── G5-verify.sh             # Test
@@ -277,32 +275,26 @@ harness/
 │   │   ├── GP1-GP5-verify.sh        # 提取脚本 fixture 验证
 │   │   ├── all.sh                   # 门禁调度器
 │   │   └── status.sh                # 门禁目录
-│   ├── base/                        # 原子能力工具（可被 AI 扩展）
-│   │   ├── jq-bootstrap.sh          # jq PATH 引导（系统无 jq 时启用 tools/jq）
-│   │   ├── sed-compat.sh            # 跨平台 sed -i 封装（GNU/BSD）
+│   ├── base/                        # 框架标准 SDK（D4：留 6 个运算工具）
 │   │   ├── scan-files.sh            # 文件扫描
 │   │   ├── merge-json.sh            # JSON 数组合并 + 去重
 │   │   ├── validate-schema.sh       # Schema 校验 + C-E1 证据链
 │   │   ├── run-ai-analysis.sh       # state.yaml 字段提取（无判断）
-│   │   ├── java-parser.sh           # Java 文件扫描/解析
 │   │   ├── json-writer.sh           # JSON 序列化（含 edge v2.1 字段）
 │   │   └── repo-manager.sh          # git clone/update
 │   └── tests/
 │       └── run.sh                   # 测试套件（GP1-5 + graph smoke）
 │
-├── .harness/                        # AI 产出物
-│   ├── extractors/                  # 提取器基线（每协议一个目录）
-│   │   ├── dubbo/  sofarpc/  grpc/  rest/
-│   │   ├── http-client/  mq/  custom/  tags/
-│   │   └── each: extract.sh + pattern.md
-│   ├── fixtures/                    # 测试样本
-│   │   ├── sample-http-client/  sample-mq/  sample-socket/
-│   │   └── expected/
-│   ├── rules/                       # 检测规则知识库
-│   ├── patterns/                    # 发现的模式
-│   └── staging/                     # E4 开发暂存 → 验收后迁移
+├── .opencode/agents/                # 12 个 Agent（现有 6 + 评审团 6）
+│   ├── graph-orchestrator / pipeline-executor / calibration-analyzer
+│   ├── adapter-developer / gate-reviewer（评审团主席）/ graph-publisher
+│   ├── protocol-reviewer / edge-case-reviewer / integration-reviewer   # E4 评审团
+│   └── coverage-reviewer / correctness-reviewer / consistency-reviewer # E5 评审团
 │
 ├── harness-conf/                    # 运营治理（人维护）
+
+(Showing lines 228-307 of 563. Use offset=308 to continue.)
+
 │   ├── DESIGN-V2.md                 # ← 本文件
 │   ├── ARCHITECTURE.md              # Agent 协作约束
 │   ├── CHANGELOG.md                 # 版本演进
@@ -335,6 +327,32 @@ harness/
 │
 └── EXTRACTION-WORKFLOW.md           # 提取器技术真相源
 ```
+
+```
+project/（项目实例，独立目录，与业务绑定）
+│
+├── extractors/                       # AI 生成的提取器（固化产物，D1 外置）
+│   ├── dubbo/  sofarpc/  grpc/  rest/
+│   ├── http-client/  mq/  custom/  tags/
+│   └── each: extract.sh
+├── fixtures/                         # 测试样本（跟提取器走）
+│   ├── sample-http-client/  sample-mq/  sample-socket/
+│   └── expected/
+├── rules/                            # 检测规则知识库（协议特化）
+├── patterns/                         # 发现的模式
+├── staging/                          # E4 开发暂存 → 验收后迁移
+├── sdk/                              # 项目专用 SDK
+│   └── java-parser.sh                # Java 文件扫描/解析（D4 外置）
+├── tools/                            # 环境依赖
+│   └── jq                            # Linux x86-64 静态二进制
+└── promote-extractor.sh              # 提取器晋级闸门（D6 外置）
+```
+
+**解耦契约（v3.0）**：
+- `HARNESS_SDK`：项目提取器引用框架 SDK 的环境变量 → `harness/scripts/base/`
+- `PROJECT_DIR`：框架脚本定位项目实例的环境变量
+- `EXTRACTORS_DIR` / `FIXTURES_DIR`：框架 pipeline/门禁定位项目产物的环境变量
+- 文件格式契约：`build-edges.sh` 只认 `schemas/node.schema.json`，不认提取器实现
 
 ---
 
@@ -532,7 +550,7 @@ D1 框架分析 (profile.yaml)
     → 人工确认包 (output/reviews/human-review-<date>.md)
 ```
 
-### 12.6 新增资产清单（v2.2 md-first 重构后）
+### 12.6 新增资产清单（v3.0 分层后）
 
 | 资产 | 位置 | 层 |
 |------|------|:---:|
@@ -550,12 +568,14 @@ D1 框架分析 (profile.yaml)
 | JSON 合并原子能力 | `scripts/base/merge-json.sh` | bash |
 | Schema 校验原子能力 | `scripts/base/validate-schema.sh` | bash |
 | state 字段提取工具 | `scripts/base/run-ai-analysis.sh` | bash |
+| **E4 评审团 agent** | `.opencode/agents/{protocol,edge-case,integration}-reviewer.md` | AI |
+| **E5 评审团 agent** | `.opencode/agents/{coverage,correctness,consistency}-reviewer.md` | AI |
 
-> **v2.2 变更**：原 `scripts/base/merge-dual.sh`（策略硬编码）已删除，合并策略移至
-> `templates/dual-dimension-merge.md`（AI 自主执行）；`build-nodes.sh` 改为纯参数化
-> 机械工具（调度决策在 `templates/build-nodes-scheduling.md`）；`pipeline.sh` Phase 2.5
-> 改为占位（校准汇总由 calibration-analyzer 按 md 后驱）。详见 `DEVELOPMENT_STANDARD.md`。
+> **v3.0 变更**：提取器/fixtures/rules/patterns/staging/java-parser/tools/jq/promote-extractor
+> 外置到 `project/`（项目实例，与业务绑定）；harness 保留框架（md + schema + gates + graph 算法 + 6 个运算 SDK）。
+> 删除 `build-nodes.sh`（内联至 pipeline）、`jq-bootstrap.sh`/`sed-compat.sh`（环境胶水，md 声明）。
+> 详见 `DEVELOPMENT_STANDARD.md` §2.2/§2.4。
 
 ---
 
-> **状态**：Phase A-D 实施完成，Phase E 文档对齐完成。v2.0.0 激活，v2.1 双维度架构落地，v2.2 md-first 重构完成。
+> **状态**：v2.0 激活 → v2.1 双维度 → v2.2 md-first → **v3.0 框架/项目分离 + 评审团制衡**。

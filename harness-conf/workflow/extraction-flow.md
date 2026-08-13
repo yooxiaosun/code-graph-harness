@@ -106,7 +106,14 @@ status: Baseline
 
 **触发来源**：E3 判定 / User 手动 `/adapt`。
 
-**执行序列**：模式分析（analyze-pattern.md）→ 脚本生成（generate-script.md）→ GP1-GP5 fixture 验证 → 持久化（persist-rule.md）→ 同步 EXTRACTION-WORKFLOW.md 与 docs/specs/extraction-scope.md。
+**执行序列**：模式分析（analyze-pattern.md）→ 脚本生成（generate-script.md）→ GP1-GP5 fixture 验证 → **E4 评审团制衡** → 持久化（persist-rule.md）→ 同步 EXTRACTION-WORKFLOW.md 与 docs/specs/extraction-scope.md。
+
+**E4 评审团（v3.0，D7-D10）**：提取器生成后，gate-reviewer spawn 3 评审员独立制衡：
+- `protocol-reviewer`（协议检测逻辑正确性）
+- `edge-case-reviewer`（漏检/误检边界）
+- `integration-reviewer`（SDK/schema/既有提取器兼容）
+
+投票：3 过=通过；2 过=退回修改（adapter-developer 修订后重评）；≤1 过=拒绝升级 User（D8 硬性）。
 
 **迭代控制**：
 - 同一模式迭代上限 3 次；每轮 E4 完成后回 E2 重跑以验证真实效果

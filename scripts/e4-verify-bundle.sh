@@ -2,9 +2,9 @@
 # ─────────────────────────────────────────────────────────────────────
 # e4-verify-bundle — E4 交付包一键验证（GP1-GP5 + 既有提取器回归）
 # 用法: bash scripts/e4-verify-bundle.sh <pattern>
-#   交付包位置: .harness/staging/<pattern>/（extract-<pattern>.sh + fixtures）
+#   交付包位置: project/staging/<pattern>/（extract-<pattern>.sh + fixtures）
 # 全部通过 exit 0；任一失败 exit 1 并打印失败门禁。
-# 规则见 .harness/staging/README.md 与 nightly-mode.md §7。
+# 规则见 project/staging/README.md 与 nightly-mode.md §7。
 # ─────────────────────────────────────────────────────────────────────
 set -uo pipefail
 
@@ -17,14 +17,14 @@ fi
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR" || exit 1
 
-# jq PATH 引导（内网无系统 jq 时启用 tools/jq）
-source "$ROOT_DIR/scripts/base/jq-bootstrap.sh"
+# 项目实例位置（staging/提取器/fixtures 都在 project；注入，不硬编码）
+PROJECT_DIR="${PROJECT_DIR:-/Users/johnsmith/WorkBench/code-graph/project}"
 
-BUNDLE_DIR=".harness/staging/$PATTERN"
+BUNDLE_DIR="$PROJECT_DIR/staging/$PATTERN"
 SCRIPT_FILE="$BUNDLE_DIR/extract-$PATTERN.sh"
 SAMPLE_DIR="$BUNDLE_DIR/fixtures/sample-$PATTERN"
 EXPECTED_FILE="$BUNDLE_DIR/fixtures/expected/$PATTERN.json"
-FIXTURES_DIR=".harness/fixtures"
+FIXTURES_DIR="$PROJECT_DIR/fixtures"
 
 FAILED=0
 fail() { echo "[FAIL] $1"; FAILED=1; }
@@ -49,16 +49,19 @@ else
 fi
 
 # ── GP2/GP3/GP4: 执行 + JSON 校验 + 召回 ─────────────────────────────
-# 提取器 source "$ROOT_DIR/scripts/base/*.sh" 依赖正式目录结构，
-# 因此将交付包放入模拟正式环境（临时目录复现 .harness/extractors + scripts/base）后执行。
+# 提取器 source HARNESS_SDK/json-writer.sh + PROJECT_DIR/sdk/java-parser.sh，
+# 因此将交付包放入模拟正式环境（临时目录复现 project/extractors + SDK）后执行。
 TMP_ENV=$(mktemp -d)
 TMP_OUTPUT=$(mktemp -d)
 trap 'rm -rf "$TMP_OUTPUT" "$TMP_ENV"' EXIT
 
-mkdir -p "$TMP_ENV/.harness/extractors/$PATTERN" "$TMP_ENV/scripts"
-cp -R "$ROOT_DIR/scripts/base" "$TMP_ENV/scripts/"
-cp "$SCRIPT_FILE" "$TMP_ENV/.harness/extractors/$PATTERN/extract.sh"
-SIM_SCRIPT="$TMP_ENV/.harness/extractors/$PATTERN/extract.sh"
+mkdir -p "$TMP_ENV/extractors/$PATTERN" "$TMP_ENV/sdk"
+cp -R "$PROJECT_DIR/sdk" "$TMP_ENV/sdk/"
+cp "$SCRIPT_FILE" "$TMP_ENV/extractors/$PATTERN/extract.sh"
+# 模拟 env：HARNESS_SDK 指向真实 harness base（json-writer 等）
+export HARNESS_SDK="$ROOT_DIR/scripts/base"
+export PROJECT_DIR="$TMP_ENV"
+SIM_SCRIPT="$TMP_ENV/extractors/$PATTERN/extract.sh"
 
 echo "── GP2: 沙箱执行（模拟正式环境）──"
 if bash "$SIM_SCRIPT" "test-service" "$SAMPLE_DIR" "$TMP_OUTPUT" > "$TMP_OUTPUT/run.log" 2>&1; then
@@ -106,7 +109,7 @@ echo "── GP5: 回归 ──"
 REGRESS_FAILED=0
 while IFS='|' read -r proto sample expected; do
     [ -z "$proto" ] && continue
-    EXTRACTOR=".harness/extractors/$proto/extract.sh"
+    EXTRACTOR="$PROJECT_DIR/extractors/$proto/extract.sh"
     SAMPLE="$FIXTURES_DIR/$sample"
     EXPECTED="$FIXTURES_DIR/expected/$expected"
     if [ ! -f "$EXTRACTOR" ] || [ ! -d "$SAMPLE" ] || [ ! -f "$EXPECTED" ]; then

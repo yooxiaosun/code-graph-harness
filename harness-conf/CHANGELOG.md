@@ -5,6 +5,47 @@
 
 ---
 
+## [v3.0.0] - 2026-08-13 - 框架/项目分离 + 评审团制衡
+
+### 核心变更
+
+**1. 框架/项目分离（D1-D6）**
+- harness 定位为**框架库**（md 模板 + Schema + 验收门禁 + 通用图算法 + 标准 SDK）
+- 提取器等固化产物**外置到项目实例** `project/`（与业务绑定）
+- 新增解耦契约：`HARNESS_SDK` / `PROJECT_DIR` / `EXTRACTORS_DIR` / `FIXTURES_DIR` 环境变量注入
+
+**2. 资产归位**
+- 外置 project：8 个提取器、fixtures、rules/patterns、staging、`project/sdk/java-parser.sh`、`project/tools/jq`、`project/promote-extractor.sh`
+- 删除：`scripts/graph/build-nodes.sh`（内联至 pipeline）、`jq-bootstrap.sh`、`sed-compat.sh`（环境胶水，md 声明替代）
+- 保留框架：gates/、graph/（通用图算法）、base/ 6 个运算 SDK、pipeline.sh（extraction-flow 默认实现）
+
+**3. 评审团制衡（D7-D10）**
+- 新增 6 个独立评审员 agent：
+  - E4 提取器评审团：protocol-reviewer / edge-case-reviewer / integration-reviewer
+  - E5 图谱评审团：coverage-reviewer / correctness-reviewer / consistency-reviewer
+- gate-reviewer 改为**评审团主席**（spawn 评审员 + 汇总投票）
+- 投票判定（D8 硬性）：3 过=通过；2 过=退回改；≤1 过=拒绝升级 User
+- 制约原则：生成者不评审自己、独立视角、裁决有据
+
+**4. 引用改造**
+- pipeline.sh：内联提取器遍历（EXTRACTORS_DIR），删 build-nodes 依赖
+- tests/run.sh：GP1-5 在 project/extractors 上；smoke 用内联提取
+- e4-verify-bundle.sh / promote-sdk.sh / nightly.sh：staging/提取器路径指向 project
+- 8 个提取器：source 改 `HARNESS_SDK/json-writer.sh` + `PROJECT_DIR/sdk/java-parser.sh`
+
+### 文档对齐
+- DESIGN-V2.md §6 目录树 v3.0（harness 框架树 + project 树 + 解耦契约）
+- ARCHITECTURE.md §3.5 评审团机制 + 12 agent 清单
+- extraction-flow.md E4 评审团 + E5 主席制
+- DEVELOPMENT_STANDARD.md §2.2 框架 bash 表 + §2.4 项目产物表
+- HARNESS.md / SETUP.md 路径更新
+
+### 向后兼容
+- 通过 `EXTRACTORS_DIR`/`FIXTURES_DIR`/`PROJECT_DIR`/`HARNESS_SDK` 环境变量，旧脚本可平滑对接
+- 提取器 SDK 引用改为环境变量，非硬编码路径
+
+---
+
 ## [v2.2.0] - 2026-08-12 - md-first 哲学贯彻 + 文件命名规范化
 
 ### 核心变更

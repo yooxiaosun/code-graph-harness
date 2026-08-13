@@ -19,10 +19,8 @@ json_array_add() {
 
 json_array_close() {
     local file="$1"
-    # 跨平台 sed 原地编辑（GNU/BSD）——sed-compat.sh 提供 sed_i
-    if command -v sed_i >/dev/null 2>&1; then
-        sed_i '$ s/,$//' "$file" 2>/dev/null || true
-    elif sed --version >/dev/null 2>&1; then
+    # 跨平台 sed 原地编辑（内联探测：GNU -i / BSD -i ''；机械操作）
+    if sed --version >/dev/null 2>&1; then
         sed -i '$ s/,$//' "$file" 2>/dev/null || true
     else
         sed -i '' '$ s/,$//' "$file" 2>/dev/null || true

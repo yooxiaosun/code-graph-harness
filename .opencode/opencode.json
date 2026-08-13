@@ -38,9 +38,11 @@
       "docs/workflow/**": "allow",
       "scripts/**": "allow",
       "repos.yaml": "allow",
-      ".harness/patterns/**": "allow",
-      ".harness/extractors/**": "allow",
-      ".harness/fixtures/**": "allow",
+      "../project/patterns/**": "allow",
+      "../project/extractors/**": "allow",
+      "../project/fixtures/**": "allow",
+      "../project/rules/**": "allow",
+      "../project/staging/**": "allow",
       "harness-conf/**": "allow",
       "EXTRACTION-WORKFLOW.md": "allow",
       "*": "ask"
@@ -52,21 +54,21 @@
 
   "agent": {
     "adapter-developer": {
-      "description": "E4 自适应编码：代码产物仅能在 .harness/staging/ 产出（晋级闸门持久化），知识产物可写 .harness/rules/ 与 .harness/patterns/（content review）",
+      "description": "E4 自适应编码：代码产物仅能在 ../project/staging/ 产出（晋级闸门持久化），知识产物可写 ../project/rules/ 与 ../project/patterns/（content review）",
       "permission": {
         "bash": {
           "bash scripts/gates/GP*": "allow",
           "bash scripts/tests/run.sh": "allow",
           "bash scripts/e4-verify-bundle.sh *": "allow",
           "bash -n *": "allow",
-          "bash scripts/promote-extractor.sh *": "deny",
+          "bash ../project/promote-extractor.sh *": "deny",
           "bash scripts/promote-sdk.sh *": "deny",
           "*": "deny"
         },
         "edit": {
-          ".harness/staging/**": "allow",
-          ".harness/rules/**": "allow",
-          ".harness/patterns/**": "allow",
+          "../project/staging/**": "allow",
+          "../project/rules/**": "allow",
+          "../project/patterns/**": "allow",
           "docs/changes/**/artifacts/E4-adapt-report.md": "allow",
           "*": "deny"
         },
@@ -84,6 +86,96 @@
         "edit": {
           "docs/changes/**/artifacts/E3-calibration-analysis.md": "allow",
           "output/nightly/**": "allow",
+          "*": "deny"
+        },
+        "read": {
+          "*": "allow"
+        }
+      }
+    },
+    "protocol-reviewer": {
+      "description": "E4 提取器评审团 · 协议正确性评审员：独立评审提取器检测逻辑，只读 + 写评审意见",
+      "permission": {
+        "bash": {
+          "*": "deny"
+        },
+        "edit": {
+          "../project/staging/**/reviews/protocol-review.md": "allow",
+          "*": "deny"
+        },
+        "read": {
+          "*": "allow"
+        }
+      }
+    },
+    "edge-case-reviewer": {
+      "description": "E4 提取器评审团 · 边界完整性评审员：独立评审漏检/误检边界",
+      "permission": {
+        "bash": {
+          "*": "deny"
+        },
+        "edit": {
+          "../project/staging/**/reviews/edge-case-review.md": "allow",
+          "*": "deny"
+        },
+        "read": {
+          "*": "allow"
+        }
+      }
+    },
+    "integration-reviewer": {
+      "description": "E4 提取器评审团 · 集成兼容性评审员：独立评审 SDK/schema/既有提取器兼容",
+      "permission": {
+        "bash": {
+          "*": "deny"
+        },
+        "edit": {
+          "../project/staging/**/reviews/integration-review.md": "allow",
+          "*": "deny"
+        },
+        "read": {
+          "*": "allow"
+        }
+      }
+    },
+    "coverage-reviewer": {
+      "description": "E5 图谱评审团 · 覆盖率评审员：独立评审图谱完整性",
+      "permission": {
+        "bash": {
+          "*": "deny"
+        },
+        "edit": {
+          "docs/changes/**/artifacts/reviews/coverage-review.md": "allow",
+          "*": "deny"
+        },
+        "read": {
+          "*": "allow"
+        }
+      }
+    },
+    "correctness-reviewer": {
+      "description": "E5 图谱评审团 · 正确性评审员：独立评审节点/边准确性（evidence 抽样）",
+      "permission": {
+        "bash": {
+          "*": "deny"
+        },
+        "edit": {
+          "docs/changes/**/artifacts/reviews/correctness-review.md": "allow",
+          "*": "deny"
+        },
+        "read": {
+          "*": "allow"
+        }
+      }
+    },
+    "consistency-reviewer": {
+      "description": "E5 图谱评审团 · 一致性评审员：独立评审双维度合并/contradiction 处置",
+      "permission": {
+        "bash": {
+          "*": "deny"
+        },
+        "edit": {
+          "docs/changes/**/artifacts/reviews/consistency-review.md": "allow",
           "*": "deny"
         },
         "read": {

@@ -13,16 +13,21 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-# jq PATH 引导（内网无系统 jq 时启用 tools/jq）
-source "$SCRIPT_DIR/base/jq-bootstrap.sh"
-# 跨平台 sed 封装（GNU/BSD）
-source "$SCRIPT_DIR/base/sed-compat.sh"
 cd "$ROOT_DIR" || exit 1
+
+# 跨平台 sed 原地编辑（内联：GNU -i / BSD -i ''；机械操作, 无策略）
+_SED_TYPE=""
+sed_i() {
+    [ -z "$_SED_TYPE" ] && { sed --version >/dev/null 2>&1 && _SED_TYPE=gnu || _SED_TYPE=bsd; }
+    [ "$_SED_TYPE" = "gnu" ] && sed -i "$1" "$2" || sed -i '' "$1" "$2"
+}
 
 TODAY=$(date +"%Y-%m-%d")
 NOW=$(date +"%Y-%m-%d %H:%M")
 LOCK_FILE=".nightly.lock"
 REPO_CONFIG="repos.yaml"
+# 项目实例位置（staging/提取器在 project；注入）
+PROJECT_DIR="${PROJECT_DIR:-/Users/johnsmith/WorkBench/code-graph/project}"
 STATE_FILE="docs/status/state.yaml"
 QUEUE_FILE="docs/status/nightly-queue.md"
 SUMMARY_DIR="output/nightly"
@@ -193,14 +198,14 @@ fi
 if [ "$AI_MODE" = "e4" ] && [ -n "$E4_INPUT_FILE" ] && [ -f "$E4_INPUT_FILE" ]; then
     echo "── E4 自适应编码（staging 收束）──"
     if opencode run --agent adapter-developer --model "$OLLAMA_MODEL" \
-        "夜间无人值守 E4（--e4 模式）。依据 ${E4_INPUT_FILE} 的模式线索，在 .harness/staging/<pattern>/ 下产出完整交付包：extract-<pattern>.sh + fixtures/sample-<pattern>/ + fixtures/expected/<pattern>.json + E4-REPORT.md。完成后运行 bash scripts/e4-verify-bundle.sh <pattern> 自证，直至全绿或迭代上限 3 次。禁止调用 scripts/promote-extractor.sh；禁止写 staging 之外任何目录。" \
+        "夜间无人值守 E4（--e4 模式）。依据 ${E4_INPUT_FILE} 的模式线索，在 project/staging/<pattern>/ 下产出完整交付包：extract-<pattern>.sh + fixtures/sample-<pattern>/ + fixtures/expected/<pattern>.json + E4-REPORT.md。完成后运行 bash scripts/e4-verify-bundle.sh <pattern> 自证，直至全绿或迭代上限 3 次。禁止调用 scripts/promote-extractor.sh；禁止写 staging 之外任何目录。" \
         > "$SUMMARY_DIR/e4-agent-$TODAY.log" 2>&1; then
         echo "  [OK] E4 agent 完成"
     else
         echo "  [WARN] E4 agent 失败（见 e4-agent-$TODAY.log）"
     fi
 
-    NEW_PATTERN=$(ls -t .harness/staging/ 2>/dev/null | grep -v '^README.md$' | grep -v '^archived$' | head -1)
+    NEW_PATTERN=$(ls -t "$PROJECT_DIR/staging/" 2>/dev/null | grep -v '^README.md$' | grep -v '^archived$' | head -1)
     if [ -n "$NEW_PATTERN" ] && bash scripts/e4-verify-bundle.sh "$NEW_PATTERN" > "$SUMMARY_DIR/e4-bundle-$TODAY.log" 2>&1; then
         echo "  [OK] 交付包 ${NEW_PATTERN} 验证全绿"
         if [ "$AUTO_PROMOTE" -eq 1 ]; then

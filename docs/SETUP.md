@@ -9,7 +9,7 @@
 |------|------|:---:|---------|:---:|
 | `git` | 克隆/更新仓库（Phase 1） | ✅ | 无法获取仓库 | 内网 git 服务 |
 | `bash` | 全部脚本解释器 | ✅ | 工程不可运行 | 系统自带 |
-| `jq` | JSON 处理（Phase 2-4、门禁） | ✅ | 13 个脚本 ABORT | **工程自带 `tools/jq`（§2.6）** |
+| `jq` | JSON 处理（Phase 2-4、门禁） | ✅ | 13 个脚本 ABORT | **项目实例自带 `project/tools/jq`（§2.6）** |
 | `node` | JSON 解析、extractors、opencode | ✅ | pipeline Phase 0 硬检查失败 | npm 代理镜像 |
 | `python3` | YAML 解析（run-ai-analysis / GE2.5） | ✅ | AI 迭代分析驱动失效 | 系统包 / 离线 |
 | `curl` | nightly 模式 Ollama 调用 | ⚠️ 仅 nightly --ai | AI 归因功能不可用 | 系统自带 |
@@ -61,37 +61,36 @@ wsl --install
 # 进入 WSL 后按 §2.1 或 §2.6 安装依赖
 ```
 
-### 2.6 离线安装 jq（内网无外网，推荐：工程自带）
+### 2.6 离线安装 jq（内网无外网）
 
-> 工程已在 `tools/jq` 内置 **Linux x86-64 静态二进制**（v1.7.1，单文件，零依赖）。
-> 脚本通过 `scripts/base/jq-bootstrap.sh` 自动发现：系统无 jq 时自动注入 `tools/jq` 到 PATH。
+> **md-first（D12）**：harness 不写自动引导胶水，只在 md 声明"环境需 jq"。
+> 项目实例自带 `project/tools/jq` **Linux x86-64 静态二进制**（v1.7.1，单文件，零依赖），
+> 由 AI 或运维按需安装到系统 PATH。
 
-**用法一（推荐，零操作）**：直接运行工程脚本即可——`jq-bootstrap.sh` 已接入
-`pipeline.sh` / `nightly.sh` / `build-edges.sh` / `compute-stats.sh` / `assemble-graph.sh` /
-`GE3` / `tests/run.sh` / `e4-verify-bundle.sh`，缺系统 jq 时自动启用 `tools/jq`。
-
-**用法二（手动全局安装）**：把 `tools/jq` 拷到系统 PATH：
+**用法一（项目自带二进制，全局安装）**：
 
 ```bash
-sudo install -m 755 tools/jq /usr/local/bin/jq
+# 从项目实例把 jq 拷到系统 PATH
+sudo install -m 755 /Users/johnsmith/WorkBench/code-graph/project/tools/jq /usr/local/bin/jq
 jq --version      # jq-1.7.1
 ```
 
-**用法三（从外网下载覆盖/升级）**：在内网有外网通道的机器下载官方静态二进制，覆盖 `tools/jq`：
+**用法二（从外网下载覆盖/升级）**：在内网有外网通道的机器下载官方静态二进制，覆盖 `project/tools/jq`：
 
 ```bash
 # 确认架构
 uname -m                       # x86_64 → jq-linux-amd64; aarch64 → jq-linux-arm64
 
 # x86_64（绝大多数 WSL）：
-wget -O tools/jq https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64
+wget -O /Users/johnsmith/WorkBench/code-graph/project/tools/jq https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64
 # ARM64（M 芯片 Mac 上的 WSL）：
-wget -O tools/jq https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-arm64
-chmod +x tools/jq
+wget -O /Users/johnsmith/WorkBench/code-graph/project/tools/jq https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-arm64
+chmod +x /Users/johnsmith/WorkBench/code-graph/project/tools/jq
 ```
 
-> **注意**：`tools/jq` 是 Linux x86-64 静态二进制，仅用于内网 WSL/Linux 运行时。
-> macOS 开发机请用系统自带 jq（`brew install jq`），`jq-bootstrap.sh` 检测到系统 jq 时不会启用 tools/jq。
+> **说明**：`project/tools/jq` 是 Linux x86-64 静态二进制，仅用于内网 WSL/Linux 运行时。
+> macOS 开发机请用系统自带 jq（`brew install jq`）。环境要求由 `pipeline.sh` Phase 0
+> 检查，缺失时打印安装命令并指向本 §2.6。
 
 ## 3. 验证清单
 
@@ -117,7 +116,7 @@ bash scripts/pipeline.sh
 
 | 现象 | 原因 | 处理 |
 |------|------|------|
-| `[FAIL] 关键依赖缺失: jq` | jq 未装且 tools/jq 不存在或架构不符 | 见 §2.6 用法三（下载覆盖 tools/jq）；或 `sudo apt-get install -y jq`（在线） |
+| `[FAIL] 关键依赖缺失: jq` | jq 未装到系统 PATH | 见 §2.6（用 project/tools/jq 或下载） |
 | `[JQ-BOOTSTRAP] 系统无 jq, 已启用工程自带 tools/jq` | 系统无 jq，bootstrap 自动注入 tools/jq | 正常提示，无需处理 |
 | nightly 状态不更新 | 旧版脚本用 macOS `sed -i ''` | 拉取最新代码（已修复为 GNU `sed -i`） |
 | `python3: command not found` | python3 未装 | `sudo apt-get install -y python3` |

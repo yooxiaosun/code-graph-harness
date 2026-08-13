@@ -16,8 +16,11 @@ fi
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR" || exit 1
 
+# 项目实例的 staging（注入；SDK 交付包在 project/staging/sdk/）
+PROJECT_DIR="${PROJECT_DIR:-/Users/johnsmith/WorkBench/code-graph/project}"
+
 NOW=$(date +"%Y-%m-%d %H:%M")
-STAGING_DIR=".harness/staging"
+STAGING_DIR="$PROJECT_DIR/staging"
 BUNDLE_DIR="$STAGING_DIR/sdk/$NAME"
 ARCHIVE_DIR="$STAGING_DIR/archived"
 BASE_DIR="scripts/base"
@@ -76,4 +79,4 @@ echo ""
 echo "==== SDK Promote Complete ===="
 echo "  函数库: $LIB_FILE"
 echo "  已归档: $ARCHIVE_DIR/sdk-$NAME-$(date +%Y-%m-%d)"
-echo "  后续: .harness/extractors/ 下提取器可通过 source 直接引用 $LIB_FILE"
+echo "  后续: project/extractors/ 下提取器可通过 source 直接引用 $LIB_FILE"

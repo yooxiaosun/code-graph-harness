@@ -72,8 +72,40 @@ E3(calibration-analyzer) → G-E3 → 判定表分流
 | pipeline-executor | `.opencode/agents/pipeline-executor.md` | subagent |
 | calibration-analyzer | `.opencode/agents/calibration-analyzer.md` | subagent |
 | adapter-developer | `.opencode/agents/adapter-developer.md` | subagent |
-| gate-reviewer | `.opencode/agents/gate-reviewer.md` | subagent |
+| gate-reviewer | `.opencode/agents/gate-reviewer.md` | subagent（评审团主席） |
 | graph-publisher | `.opencode/agents/graph-publisher.md` | subagent |
+| protocol-reviewer | `.opencode/agents/protocol-reviewer.md` | subagent（E4 评审员） |
+| edge-case-reviewer | `.opencode/agents/edge-case-reviewer.md` | subagent（E4 评审员） |
+| integration-reviewer | `.opencode/agents/integration-reviewer.md` | subagent（E4 评审员） |
+| coverage-reviewer | `.opencode/agents/coverage-reviewer.md` | subagent（E5 评审员） |
+| correctness-reviewer | `.opencode/agents/correctness-reviewer.md` | subagent（E5 评审员） |
+| consistency-reviewer | `.opencode/agents/consistency-reviewer.md` | subagent（E5 评审员） |
+
+## §3.5 评审团机制（v3.0，D7-D10）
+
+**定位**：流水线管"流程顺序"，评审团管"关键产出制衡"。bash 门禁做确定性兜底，AI 评审团做语义制衡，两层叠加。
+
+**E4 提取器评审团**（adapter-developer 生成后 spawn）：
+| 评审员 | 视角 |
+|--------|------|
+| protocol-reviewer | 协议检测逻辑正确性 |
+| edge-case-reviewer | 漏检/误检边界 |
+| integration-reviewer | SDK/schema/既有提取器兼容 |
+
+**E5 图谱评审团**（gate-reviewer 协调）：
+| 评审员 | 视角 |
+|--------|------|
+| coverage-reviewer | 图谱完整性 |
+| correctness-reviewer | 节点/边准确性 |
+| consistency-reviewer | 双维度合并合理性 |
+
+**制约原则（4 条）**：
+1. 生成者不评审自己（adapter-developer 不参与 E4 评审团）
+2. 评审员独立视角（各只对自己的维度负责）
+3. 裁决必须有据（PASS/FAIL 附源码路径/字段值）
+4. 投票判定：3 过=通过；2 过=退回改；≤1 过=拒绝升级 User
+
+**硬性门槛（D8）**：评审团否决必须退回，orchestrator 强制，不可绕过。
 
 ## §4 自适应闭环架构
 

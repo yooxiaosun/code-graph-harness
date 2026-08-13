@@ -1,3 +1,0 @@
-[
-  {"id": "test-service::com.example.EventProducer.mq", "type": "interface", "name": "producer", "parent": "test-service", "protocol": "mq", "role": "producer", "className": "com.example.EventProducer", "signature": "", "path": "", "httpMethod": "", "httpPath": "", "tags": []}
-]

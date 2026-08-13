@@ -6,9 +6,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GRAPH_SCRIPTS="$SCRIPT_DIR/graph"
-# jq PATH 引导（内网无系统 jq 时启用 tools/jq；机械注入, 无策略）
-source "$SCRIPT_DIR/base/jq-bootstrap.sh"
 REPO_CONFIG="${1:-repos.yaml}"
+# 项目实例的固化产物位置（AI/编排器注入；不硬编码、不自动探测）
+EXTRACTORS_DIR="${EXTRACTORS_DIR:-/Users/johnsmith/WorkBench/code-graph/project/extractors}"
 NODES_DIR="output/nodes"
 EDGES_DIR="output/edges"
 CALIBRATION_DIR="output/calibration"
@@ -106,9 +106,27 @@ if [ -f "$REPO_CONFIG" ] && [ "$(get_repo_count "$REPO_CONFIG")" -gt 0 ] 2>/dev/
 
         [ ! -d "$REPO_PATH" ] && echo "  [SKIP] $REPO_NAME: not cloned" && continue
 
-        # 参数化执行（--plan 由 AI 按 templates/build-nodes-scheduling.md 决策传入；
-        # 无 --plan 时全量 = 向后兼容）
-        bash "$GRAPH_SCRIPTS/build-nodes.sh" "$REPO_NAME" "$REPO_PATH" "$NODES_DIR"
+        # 脚本维度提取：遍历 project 提取器（排除 tags，后置串行）
+        # --plan 由 AI 按 templates/build-nodes-scheduling.md 决策；无则全量（向后兼容）
+        PLAN="${EXTRACTION_PLAN:-}"
+        pids=()
+        for ext in "$EXTRACTORS_DIR"/*/extract.sh; do
+            [ -f "$ext" ] || continue
+            proto=$(basename "$(dirname "$ext")")
+            [ "$proto" = "tags" ] && continue
+            if [ -n "$PLAN" ] && ! case " $PLAN " in *" $proto "*) ;; *) false ;; esac; then
+                echo "  [SKIP] ${proto} (not in EXTRACTION_PLAN)"
+                continue
+            fi
+            bash "$ext" "$REPO_NAME" "$REPO_PATH" "$NODES_DIR" &
+            pids+=($!)
+        done
+        for pid in ${pids[@]+"${pids[@]}"}; do wait "$pid" || true; done
+
+        # tags 串行
+        if [ -f "$EXTRACTORS_DIR/tags/extract.sh" ]; then
+            bash "$EXTRACTORS_DIR/tags/extract.sh" "$REPO_NAME" "$REPO_PATH" "$NODES_DIR"
+        fi
     done < <(get_repo_urls "$REPO_CONFIG")
 fi
 echo ""

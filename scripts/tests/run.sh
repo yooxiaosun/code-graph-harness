@@ -2,8 +2,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# jq PATH 引导（内网无系统 jq 时启用 tools/jq）
-source "$SCRIPT_DIR/../base/jq-bootstrap.sh"
+# 项目实例的固化产物位置（AI/编排器注入）
+PROJECT_DIR="${PROJECT_DIR:-/Users/johnsmith/WorkBench/code-graph/project}"
+EXTRACTORS_DIR="${EXTRACTORS_DIR:-$PROJECT_DIR/extractors}"
+FIXTURES_DIR="${FIXTURES_DIR:-$PROJECT_DIR/fixtures}"
 
 failures=0
 for file in .agent/project.json .agent/report.json; do
@@ -18,7 +20,7 @@ fi
 # ── GP1-GP5 fixture verification: gate-criteria.md MUST ──
 GATES_DIR="scripts/gates"
 for proto in http-client mq custom; do
-    extractor=".harness/extractors/$proto/extract.sh"
+    extractor="$EXTRACTORS_DIR/$proto/extract.sh"
     [ -f "$extractor" ] || continue
     echo ""
     echo "── Fixture verification: $proto ($extractor) ──"
@@ -38,22 +40,24 @@ for proto in http-client mq custom; do
     done
 done
 
-# ── Graph Pipeline Smoke: build-nodes → build-edges (最小聚焦检查) ──
+# ── Graph Pipeline Smoke: extractors → build-edges (最小聚焦检查) ──
 GRAPH_SMOKE_DIR="scripts/tests/.graph-smoke"
 GRAPH_NODES_DIR="$GRAPH_SMOKE_DIR/nodes"
 GRAPH_EDGES_DIR="$GRAPH_SMOKE_DIR/edges"
-GRAPH_FIXTURE=".harness/fixtures/sample-http-client"
+GRAPH_FIXTURE="$FIXTURES_DIR/sample-http-client"
 GRAPH_SVC="smoke-svc"
 
 echo ""
-echo "── Graph Pipeline Smoke (build-nodes → build-edges) ──"
+echo "── Graph Pipeline Smoke (extractors → build-edges) ──"
 rm -rf "$GRAPH_SMOKE_DIR"
 mkdir -p "$GRAPH_NODES_DIR" "$GRAPH_EDGES_DIR"
 
-if bash scripts/graph/build-nodes.sh "$GRAPH_SVC" "$GRAPH_FIXTURE" "$GRAPH_NODES_DIR" >/dev/null 2>&1; then
-    echo "[PASS] build-nodes.sh ran with minimal fixture input"
+# 内联执行 http-client 提取器（替代已删除的 build-nodes.sh）
+HTTP_EXT="$EXTRACTORS_DIR/http-client/extract.sh"
+if [ -f "$HTTP_EXT" ] && bash "$HTTP_EXT" "$GRAPH_SVC" "$GRAPH_FIXTURE" "$GRAPH_NODES_DIR" >/dev/null 2>&1; then
+    echo "[PASS] http-client extractor ran on fixture"
 else
-    echo "[FAIL] build-nodes.sh returned non-zero"
+    echo "[FAIL] http-client extractor returned non-zero (or missing)"
     failures=$((failures + 1))
 fi
 

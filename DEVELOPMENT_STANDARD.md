@@ -49,13 +49,14 @@
 | 开发规范 | `DEVELOPMENT_STANDARD.md` | 本文件 |
 | Agent 入口 | `HARNESS.md` | 硬约束 + 项目定位 |
 
-### §2.2 bash 层（机械工具）
+### §2.2 bash 层（机械工具，v3.0）
+
+> **v3.0 分层**：harness 是框架库；提取器等固化产物属**项目实例**（project/）。
+> 下表为 harness 框架侧保留的 bash；项目侧产物见 §2.4。
 
 | 工具 | 职责 | 判定标准 |
 |------|------|---------|
 | `base/scan-files.sh` | 扫描文件列表 | 机械 find |
-| `base/jq-bootstrap.sh` | jq PATH 引导（系统无 jq 时启用 tools/jq） | 机械 PATH 注入 |
-| `base/sed-compat.sh` | 跨平台 sed -i 封装（GNU/BSD 差异） | 机械探测分支 |
 | `base/merge-json.sh` | JSON 数组合并 + 去重 | 机械 jq |
 | `base/validate-schema.sh` | Schema 校验 + 路径存在 | 机械校验 |
 | `base/repo-manager.sh` | git clone/update | 机械 |
@@ -63,18 +64,28 @@
 | `base/run-ai-analysis.sh` | 提取 state.yaml 字段 | 机械读 YAML（**不含判断**） |
 | `graph/compute-stats.sh` | 算统计数 | 机械算术 |
 | `graph/assemble-graph.sh` | JSON 拼装 | 机械合并 |
-| `graph/build-nodes.sh` | 运行给定提取器（--plan 参数化） | 机械执行，无策略判断 |
 | `graph/build-edges.sh` | 提供者池匹配 + 边产出 | 机械匹配，数值评分映射为确定性规则 |
 | `graph/merge-graphs.sh` | 增量合并 | 机械文件操作 |
-| `pipeline.sh` | 阶段顺序编排骨架 | 机械顺序，无策略判断 |
+| `pipeline.sh` | 阶段顺序编排骨架（extraction-flow 默认实现） | 机械顺序，无策略判断 |
 | `nightly.sh` | 无人值守批量入口 | 机械调度 + 基础设施可用性检查 |
 | `gates/GE*.sh / GP*.sh / G*.sh` | 门禁校验 | 确定性规则 |
-| `promote-extractor.sh / promote-sdk.sh` | E4 晋级闸门 | 确定性自证 + 防覆盖 |
-| `.harness/extractors/*/extract.sh` | 提取器基线 | 保留作为双轨对比基线 |
+| `promote-sdk.sh` | SDK 晋级闸门（项目 SDK → 框架 base/） | 确定性自证 + 防覆盖 |
 
-> 上述编排类脚本（pipeline/nightly/build-nodes/build-edges）虽然控制流程，
-> 但**不含策略判断**——它们只执行显式传入的参数（--plan / 模式）或确定性映射规则。
+> 上述编排类脚本虽然控制流程，但**不含策略判断**——它们只执行显式传入的参数
+> （`EXTRACTORS_DIR` / `FIXTURES_DIR` / `HARNESS_SDK` / `PROJECT_DIR`）或确定性映射规则。
 > 任何"该选 A 还是 B / 要不要回退 / 怎么加权"的决策都属于 md 层。
+
+### §2.4 项目侧固化产物（project/，非框架）
+
+| 产物 | 位置 | 说明 |
+|------|------|------|
+| 提取器 | `project/extractors/*/extract.sh` | AI 生成，双轨对比基线 |
+| 项目 SDK | `project/sdk/java-parser.sh` | 提取器专用（D4 外置） |
+| fixtures | `project/fixtures/` | 测试样本 |
+| rules / patterns | `project/rules/` `project/patterns/` | 协议特化知识 |
+| staging | `project/staging/` | E4 暂存 |
+| 晋级闸门 | `project/promote-extractor.sh` | 提取器晋级（D6 外置） |
+| 环境依赖 | `project/tools/jq` | 静态二进制（SETUP.md §2.6） |
 
 ### §2.3 禁止区（不该存在的东西）
 

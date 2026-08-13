@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_TO_VERIFY="${1:-}"
-FIXTURES_DIR="${2:-.harness/fixtures}"
+FIXTURES_DIR="${2:-/Users/johnsmith/WorkBench/code-graph/project/fixtures}"
 
 if [ -z "$SCRIPT_TO_VERIFY" ]; then
     echo "Usage: $0 <script-path> [fixtures-dir]"
