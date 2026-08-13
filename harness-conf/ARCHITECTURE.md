@@ -113,7 +113,7 @@ E3(calibration-analyzer) → G-E3 → 判定表分流
 
 ```
 数据面（只增不改）                 能力面（可自我演化）
-output/nodes/edges/calibration     .harness/extractors/
+output/nodes/edges/calibration     project/extractors/
         │                                  ▲
         │  E3 发现覆盖缺口                  │ E4 持久化新提取器
         ▼                                  │
@@ -126,7 +126,7 @@ output/nodes/edges/calibration     .harness/extractors/
 **安全边界**：
 1. 能力面修改只允许 adapter-developer 执行，且必须过 GP1-GP5
 2. GP5 回归（`bash scripts/tests/run.sh`）保证既有提取能力不被破坏
-3. 每次能力扩展都留下可追溯记录：`.harness/patterns/{pattern}.md` + E4-adapt-report.md
+3. 每次能力扩展都留下可追溯记录：`project/patterns/{pattern}.md` + E4-adapt-report.md
 4. 迭代上限 3 次 + User 升级通道，防止无限自我重试
 
 ## §5 治理域边界

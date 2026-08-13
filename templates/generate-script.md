@@ -2,7 +2,7 @@
 
 ## Context
 你是 Harness 脚本生成专家。根据上一步的模式分析结果，生成一个符合 Harness 工程规范的 bash 提取脚本。
-该脚本经 staging 自证与晋级后落位 `.harness/extractors/{pattern}/extract.sh`，成为 Harness 的一部分。
+该脚本经 staging 自证与晋级后落位 `project/extractors/{pattern}/extract.sh`，成为 Harness 的一部分。
 
 ## Input
 ### 模式分析结果

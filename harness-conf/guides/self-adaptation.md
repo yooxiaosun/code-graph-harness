@@ -28,7 +28,7 @@ Step 1 模式分析    templates/analyze-pattern.md
   └─ 分流: confidence < 0.6 或 can_automate=false → 记录"需人工标注"后跳过
 
 Step 2 脚本生成    templates/generate-script.md
-  └─ 产物: .harness/staging/<pattern>/extract-{pattern}.sh
+  └─ 产物: project/staging/<pattern>/extract-{pattern}.sh
 
 Step 3 fixture 验证（GP1-GP5，全绿才继续）
   ├─ 构造样例: fixtures/sample-{pattern}/（最小可触发 Java 代码）
@@ -36,9 +36,9 @@ Step 3 fixture 验证（GP1-GP5，全绿才继续）
   ├─ GP1 语法 / GP2 执行 / GP3 Schema / GP4 召回 / GP5 回归
 
 Step 4 持久化      templates/persist-rule.md
-  ├─ .harness/patterns/{pattern}.md（含 GP 验证记录）
+  ├─ project/patterns/{pattern}.md（含 GP 验证记录）
   ├─ repos.yaml nonstandard.scanners 注册
-  ├─ build-nodes.sh 自动扫描 .harness/extractors/，无需手动接入
+  ├─ pipeline.sh 按 EXTRACTORS_DIR 扫描 project/extractors/，无需手动接入
   └─ 文档同步: EXTRACTION-WORKFLOW.md §2.4.5 + docs/specs/extraction-scope.md
 
 Step 5 回 E2 重跑验证真实效果
@@ -56,11 +56,11 @@ Step 5 回 E2 重跑验证真实效果
 
 ## §4 质量红线
 
-1. 未过 GP1-GP5 的脚本**禁止**接入 build-nodes.sh（防止污染数据面）
+1. 未过 GP1-GP5 的脚本**禁止**纳入 EXTRACTORS_DIR 调度（防止污染数据面）
 2. GP5 回归必须覆盖既有三个 fixture（http-client / mq / socket）
 3. 新脚本不得引入 bash/grep/jq 之外依赖
 4. 检测 pattern 宁窄勿宽：误报（false positive）比漏报更伤图谱可信度；宁可低置信度标记交给 E3 的 D 检查复核
-5. 每次持久化必须留痕：`.harness/patterns/{pattern}.md` 的 Verification History 表
+5. 每次持久化必须留痕：`project/patterns/{pattern}.md` 的 Verification History 表
 
 ## §5 示例：一个新模式的完整生命周期
 
@@ -70,7 +70,7 @@ E3 发现: payment-service 中 3 处 import com.example.thrift.TServiceClient
   ↓ generate-script: extract-thrift.sh（grep TServiceClient + 方法调用）
   ↓ fixture: sample-thrift/ + expected/thrift.json
   ↓ GP1-GP5 全绿
-  ↓ 持久化 + repos.yaml 注册 + build-nodes.sh 接入
+  ↓ 持久化 + repos.yaml 注册 + pipeline.sh 经 EXTRACTORS_DIR 调度
   ↓ 回 E2 重跑: unresolved 从 8 降到 2, match_rate 0.68 → 0.81 (FAIR)
   ↓ E3 判定 E5 → 发布
 ```
@@ -79,7 +79,7 @@ E3 发现: payment-service 中 3 处 import com.example.thrift.TServiceClient
 
 | 产物类别 | 产出位置 | 自证方式 | 晋级通道 | 评审方式 |
 |---------|---------|---------|---------|---------|
-| 代码层（提取器） | `.harness/staging/<pattern>/` | `bash scripts/e4-verify-bundle.sh <pattern>` | `promote-extractor.sh` → `.harness/extractors/<pattern>/` | GP1-GP5 全绿 |
-| 代码层（SDK 扩展） | `.harness/staging/sdk/<name>/` | `test-<name>.sh` | `promote-sdk.sh` → `scripts/base/` | 测试全绿 + bash -n |
+| 代码层（提取器） | `project/staging/<pattern>/` | `bash scripts/e4-verify-bundle.sh <pattern>` | `promote-extractor.sh` → `project/extractors/<pattern>/` | GP1-GP5 全绿 |
+| 代码层（SDK 扩展） | `project/staging/sdk/<name>/` | `test-<name>.sh` | `promote-sdk.sh` → `scripts/base/` | 测试全绿 + bash -n |
 | 分析层（报告） | `docs/changes/<任务>/artifacts/E4-adapt-report.md` | 内容审查 | 无需晋级（直接归档） | orchestrator / gate-reviewer |
-| 知识层（规则） | `.harness/rules/` `.harness/patterns/` | content review | 直接写入（不入晋级闸门） | gate-reviewer 抽样审查 |
+| 知识层（规则） | `project/rules/` `project/patterns/` | content review | 直接写入（不入晋级闸门） | gate-reviewer 抽样审查 |

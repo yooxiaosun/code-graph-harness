@@ -198,7 +198,7 @@ fi
 if [ "$AI_MODE" = "e4" ] && [ -n "$E4_INPUT_FILE" ] && [ -f "$E4_INPUT_FILE" ]; then
     echo "── E4 自适应编码（staging 收束）──"
     if opencode run --agent adapter-developer --model "$OLLAMA_MODEL" \
-        "夜间无人值守 E4（--e4 模式）。依据 ${E4_INPUT_FILE} 的模式线索，在 project/staging/<pattern>/ 下产出完整交付包：extract-<pattern>.sh + fixtures/sample-<pattern>/ + fixtures/expected/<pattern>.json + E4-REPORT.md。完成后运行 bash scripts/e4-verify-bundle.sh <pattern> 自证，直至全绿或迭代上限 3 次。禁止调用 scripts/promote-extractor.sh；禁止写 staging 之外任何目录。" \
+        "夜间无人值守 E4（--e4 模式）。依据 ${E4_INPUT_FILE} 的模式线索，在 project/staging/<pattern>/ 下产出完整交付包：extract-<pattern>.sh + fixtures/sample-<pattern>/ + fixtures/expected/<pattern>.json + E4-REPORT.md。完成后运行 bash scripts/e4-verify-bundle.sh <pattern> 自证，直至全绿或迭代上限 3 次。禁止调用 project/promote-extractor.sh；禁止写 staging 之外任何目录。" \
         > "$SUMMARY_DIR/e4-agent-$TODAY.log" 2>&1; then
         echo "  [OK] E4 agent 完成"
     else
@@ -209,15 +209,15 @@ if [ "$AI_MODE" = "e4" ] && [ -n "$E4_INPUT_FILE" ] && [ -f "$E4_INPUT_FILE" ]; 
     if [ -n "$NEW_PATTERN" ] && bash scripts/e4-verify-bundle.sh "$NEW_PATTERN" > "$SUMMARY_DIR/e4-bundle-$TODAY.log" 2>&1; then
         echo "  [OK] 交付包 ${NEW_PATTERN} 验证全绿"
         if [ "$AUTO_PROMOTE" -eq 1 ]; then
-            if bash scripts/promote-extractor.sh "$NEW_PATTERN"; then
+            if bash "$PROJECT_DIR/promote-extractor.sh" "$NEW_PATTERN"; then
                 echo "  [OK] 自动晋级 ${NEW_PATTERN}"
             else
                 echo "  [WARN] 自动晋级失败（见上方输出）"
-                echo "- [$NOW] nightly-$TODAY | E4 自动晋级失败（${NEW_PATTERN}）| 人工检查后运行 promote-extractor.sh" >> "$QUEUE_FILE"
+                echo "- [$NOW] nightly-$TODAY | E4 自动晋级失败（${NEW_PATTERN}）| 人工检查后运行 project/promote-extractor.sh" >> "$QUEUE_FILE"
             fi
         else
             echo "  [INFO] 已标记待晋级 → ${NEW_PATTERN}"
-            echo "- [$NOW] nightly-$TODAY | E4 交付包 ${NEW_PATTERN} 验证全绿 | 白天运行 bash scripts/promote-extractor.sh ${NEW_PATTERN} 晋级" >> "$QUEUE_FILE"
+            echo "- [$NOW] nightly-$TODAY | E4 交付包 ${NEW_PATTERN} 验证全绿 | 白天运行 bash ${PROJECT_DIR}/promote-extractor.sh ${NEW_PATTERN} 晋级" >> "$QUEUE_FILE"
         fi
     else
         echo "  [WARN] staging 无有效交付包（或验证未全绿，见 e4-bundle-$TODAY.log）"

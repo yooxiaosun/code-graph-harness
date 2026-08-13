@@ -98,7 +98,7 @@ chmod +x /Users/johnsmith/WorkBench/code-graph/project/tools/jq
 
 ```bash
 # 1. 全量语法检查（应无输出）
-find scripts .harness -name '*.sh' -exec bash -n {} \;
+find scripts ../project -name '*.sh' -exec bash -n {} \;
 
 # 2. 配置校验（应 OK, 0 warning）
 bash scripts/validate-config.sh

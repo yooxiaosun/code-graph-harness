@@ -9,7 +9,7 @@ items，生成结构化确认包，供 daytime 人工审阅。工作受 `templat
 - Bail-out 项: `output/reviews/<service>/bail-out-round-<N>.md`
 - 边界外节点: 所有 `evidence_type=*_only` 且 `metadata.boundary_external=true` 的节点
 - 双维度矛盾项: `metadata.dual_dimension_consistency=contradiction` 的节点/边
-- 规则库待补充项: AI 判定"需更新 .harness/rules/" 的未知模式
+- 规则库待补充项: AI 判定"需更新 project/rules/" 的未知模式
 
 ## 输出格式
 
@@ -23,7 +23,7 @@ items，生成结构化确认包，供 daytime 人工审阅。工作受 `templat
 - 待确认项: M
   - confirm_node: X        # AI 认为属实，需人工确认
   - update_script: Y       # 建议更新 bash 提取器
-  - update_rule: Z         # 建议补充 .harness/rules/ 检测规则
+  - update_rule: Z         # 建议补充 project/rules/ 检测规则
   - bail_out: W            # 无法分类，直接人工
 
 ## Item 1 - confirm_node | order-service
@@ -48,11 +48,11 @@ items，生成结构化确认包，供 daytime 人工审阅。工作受 `templat
 
 ## 禁止 (MUST NOT)
 - 不得代替人工做最终决策（只生成包，不自行 approve）
-- 不得修改 .harness/rules/ 或提取器（那是人工确认后 E4 的职责）
+- 不得修改 project/rules/ 或提取器（那是人工确认后 E4 的职责）
 - 不得删除任何需要人工确认的 item
 - 不得使用旧包数据冒充新包（必须基于本轮 state.yaml 重新生成）
 
 ## Gate
 - 人工审阅通过后 → 更新 docs/status/state.yaml 的 pending_reviews
 - 批准的 update_script → 触发 E4 (adapter-developer)
-- 批准的 update_rule → 更新 .harness/rules/ (content review)
+- 批准的 update_rule → 更新 project/rules/ (content review)

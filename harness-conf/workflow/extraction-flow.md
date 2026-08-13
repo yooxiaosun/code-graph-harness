@@ -50,7 +50,7 @@ status: Baseline
 1. pipeline-executor 按 `templates/analyze-framework.md` 对每个仓库做框架指纹分析
 2. 产出 `output/analysis/<service>-profile.yaml` + `<service>-profile-review.md`
 3. G-E2.5 验收（`scripts/gates/GE2.5-framework-analysis.sh`）三级回退：
-   - 通过 → 按 extraction_plan 精准提取（build-nodes.sh 自动读取）
+   - 通过 → 按 extraction_plan 精准提取（pipeline.sh 经 EXTRACTION_PLAN 读取）
    - 部分失败 → 警告 + 回退全部提取器
    - 完全失败 / 无 profile → 静默回退全部提取器（= v1 行为，nightly 无 AI 场景零退化）
 
@@ -58,14 +58,14 @@ status: Baseline
 
 | 模式 | 命令 | 适用 |
 |------|------|------|
-| 全量 | `bash scripts/pipeline.sh` | 首次提取 / 配置变更 / 脚本变更 |
+| 全量 | `PROJECT_DIR=<project> bash scripts/pipeline.sh` | 首次提取 / 配置变更 / 脚本变更 |
 | 增量 | pipeline.sh + 变更检测（见 `EXTRACTION-WORKFLOW.md §6`） | 日常更新 |
-| 单仓库 | `build-nodes.sh <service> <path>` + 后续 layers | 调试 / 局部重提取 |
+| 单仓库 | `pipeline.sh` 内联提取器（EXTRACTORS_DIR 指定）+ 后续 layers | 调试 / 局部重提取 |
 
-**双维度提取（v2.1 新增，v2.2 md-first 修正）**：
-- 脚本维度：`.harness/extractors/*/extract.sh` 机械基线 → `output/nodes-script/<svc>/`
+**双维度提取（v2.1 新增，v2.2 md-first，v3.0 项目化）**：
+- 脚本维度：`project/extractors/*/extract.sh` 机械基线 → `output/nodes-script/<svc>/`
 - AI 维度：AI 直产（`templates/analyze-framework.md` + `templates/dual-pass-review.md`）→ `output/nodes-ai/<svc>/`
-- 调度决策：AI 按 `templates/build-nodes-scheduling.md` 决定 single/dual 模式与 --plan（build-nodes.sh 为纯参数化工具）
+- 调度决策：AI 按 `templates/build-nodes-scheduling.md` 决定 single/dual 模式与 plan（pipeline.sh 经 EXTRACTORS_DIR/EXTRACTION_PLAN 参数化执行）
 - 双轨合并：AI 按 `templates/dual-dimension-merge.md` 合并 `nodes-script` + `nodes-ai` → `output/nodes/<svc>/`（置信度分级 + 去重 + 协议级加权）
 - 置信度：节点级印证（bash∩AI=high / 单方=medium）+ 协议级加权（profile high→+1 / none→-1）
 

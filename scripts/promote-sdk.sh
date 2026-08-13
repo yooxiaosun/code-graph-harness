@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────────────
 # promote-sdk — E4 SDK 扩展晋级闸门（staging → scripts/base/）
 # 用法: bash scripts/promote-sdk.sh <name>
-#   前置: .harness/staging/sdk/<name>/ 交付包存在、test-<name>.sh 全绿
+#   前置: project/staging/sdk/<name>/ 交付包存在、test-<name>.sh 全绿
 # 这是唯一允许将 SDK 扩展写入 scripts/base/ 的通道。
 # ─────────────────────────────────────────────────────────────────────
 set -uo pipefail

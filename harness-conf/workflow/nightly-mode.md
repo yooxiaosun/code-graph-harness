@@ -66,7 +66,7 @@ status: Baseline
    - 任一 MUST 失败 → 该仓库记入晨检队列，不归档
 5. [--e4] E4 自适应编码（受限执行，三道防线）
    - 有 e4-input 触发信号 → opencode headless 跑 adapter-developer
-   - AI 在 .harness/staging/<pattern>/ 产出交付包（脚本+fixtures+期望输出+报告）
+   - AI 在 project/staging/<pattern>/ 产出交付包（脚本+fixtures+期望输出+报告）
    - nightly.sh 对最新交付包跑 e4-verify-bundle.sh（GP1-GP5 + 回归）
    - 全绿 → 默认记"待晋级"进晨检队列；--auto-promote 才执行 promote-extractor.sh
    - 未全绿 → 交付包留在 staging，记晨检队列供次日诊断
@@ -105,9 +105,9 @@ status: Baseline
 
 | 防线 | 机制 | 效果 |
 |------|------|------|
-| **1. 权限收束** | opencode.json 给 `adapter-developer` 配 Agent 级 permission：edit 仅 `.harness/staging/**`；bash 仅验证脚本；`promote-extractor.sh`、`.harness/extractors/**`、`repos.yaml`、`output/**` 全部 deny | 权限层面不存在写坏正式目录的可能 |
+| **1. 权限收束** | opencode.json 给 `adapter-developer` 配 Agent 级 permission：edit 仅 `project/staging/**`；bash 仅验证脚本；`promote-extractor.sh`、`project/extractors/**`、`repos.yaml`、`output/**` 全部 deny | 权限层面不存在写坏正式目录的可能 |
 | **2. 产物自证** | 交付包强制三件套（脚本+样例+期望输出）；`scripts/e4-verify-bundle.sh` 一键跑 GP1-GP5 + 既有提取器回归 | AI 必须自证正确，门禁不过产物不离开 staging |
-| **3. 晋级闸门** | `scripts/promote-extractor.sh` 是唯一能写正式目录的通道（再次全量自证 + 防覆盖冲突 + 记录 progress + staging 归档）；夜间默认只标记待晋级 | 生效动作可追溯、可回退 |
+| **3. 晋级闸门** | `project/promote-extractor.sh` 是唯一能写正式目录的通道（再次全量自证 + 防覆盖冲突 + 记录 progress + staging 归档）；夜间默认只标记待晋级 | 生效动作可追溯、可回退 |
 
 ### 5.2 算力策略
 
@@ -134,11 +134,11 @@ status: Baseline
 | E4 触发信号（模式线索） | `output/nightly/e4-input-<日期>.md` |
 | E3/E4 agent 会话日志 | `output/nightly/e3-agent-<日期>.log` / `e4-agent-<日期>.log` |
 | E4 交付包验证日志 | `output/nightly/e4-bundle-<日期>.log` |
-| E4 交付包（AI 唯一可写区） | `.harness/staging/<pattern>/` |
+| E4 交付包（AI 唯一可写区） | `project/staging/<pattern>/` |
 
 ## §6 安全边界（nightly 绝对不做）
 
-1. **不直接写** `.harness/extractors/`（E4 产物限 `.harness/staging/`，晋级仅经 promote-extractor.sh）
+1. **不直接写** `project/extractors/`（E4 产物限 `project/staging/`，晋级仅经 promote-extractor.sh）
 2. **不修改** `repos.yaml`
 3. **不修改** `harness-conf/` 任何文件
 4. **不自动豁免**任何门禁

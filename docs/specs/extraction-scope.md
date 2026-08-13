@@ -22,19 +22,19 @@ status: Baseline
 
 | 协议 | 提供侧特征 | 消费侧特征 | 提取器 |
 |------|-----------|-----------|--------|
-| dubbo | @DubboService / @Service | @DubboReference / @Reference | `.harness/extractors/dubbo/extract.sh` |
-| sofarpc | @SofaService / GenericService | @SofaReference | `.harness/extractors/sofarpc/extract.sh` |
-| grpc | BindableService / .proto | ManagedChannel / *Stub | `.harness/extractors/grpc/extract.sh` |
-| rest | @RestController / @Path | @FeignClient / RestTemplate / WebClient | `.harness/extractors/rest/extract.sh` |
+| dubbo | @DubboService / @Service | @DubboReference / @Reference | `project/extractors/dubbo/extract.sh` |
+| sofarpc | @SofaService / GenericService | @SofaReference | `project/extractors/sofarpc/extract.sh` |
+| grpc | BindableService / .proto | ManagedChannel / *Stub | `project/extractors/grpc/extract.sh` |
+| rest | @RestController / @Path | @FeignClient / RestTemplate / WebClient | `project/extractors/rest/extract.sh` |
 
 ### 非标协议（模式扫描）
 
 | 模式 | 检测特征 | 提取器 | 登记日期 |
 |------|---------|--------|---------|
-| http-client | RestTemplate/OkHttpClient/HttpClient/WebClient 调用 | `.harness/extractors/http-client/extract.sh` | 基线 |
-| mq | Kafka/RabbitMQ/RocketMQ 生产消费 | `.harness/extractors/mq/extract.sh` | 基线 |
-| socket | Netty ServerBootstrap/Bootstrap、java.net Socket | `.harness/extractors/custom/extract.sh` | 基线 |
-| custom-unknown | 含 rpc/remote/connect/transport 的非标 import | `.harness/extractors/custom/extract.sh`（标记 [AI-REQUIRED]） | 基线 |
+| http-client | RestTemplate/OkHttpClient/HttpClient/WebClient 调用 | `project/extractors/http-client/extract.sh` | 基线 |
+| mq | Kafka/RabbitMQ/RocketMQ 生产消费 | `project/extractors/mq/extract.sh` | 基线 |
+| socket | Netty ServerBootstrap/Bootstrap、java.net Socket | `project/extractors/custom/extract.sh` | 基线 |
+| custom-unknown | 含 rpc/remote/connect/transport 的非标 import | `project/extractors/custom/extract.sh`（标记 [AI-REQUIRED]） | 基线 |
 
 ## §3 已知未覆盖（E4 放弃或待支持）
 

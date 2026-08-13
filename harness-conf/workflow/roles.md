@@ -54,7 +54,7 @@ status: Baseline
 
 - **MUST**：按三模板（analyze-pattern / generate-script / persist-rule）完成分析→生成→GP1-GP5 验证→持久化→文档同步；迭代上限 3 次
 - **MUST NOT**：未过 GP1-GP5 禁止持久化/集成；不得改标准提取器检测逻辑（除非交接块明确）；不得引入新依赖（除非 User 批准）
-- **写入边界**：`scripts/**`、`repos.yaml`、`.harness/patterns/**`、fixtures、`EXTRACTION-WORKFLOW.md`、`docs/specs/extraction-scope.md`、E4 报告
+- **写入边界**：`scripts/**`、`repos.yaml`、`project/patterns/**`、fixtures、`EXTRACTION-WORKFLOW.md`、`docs/specs/extraction-scope.md`、E4 报告
 
 ### 2.5 gate-reviewer
 

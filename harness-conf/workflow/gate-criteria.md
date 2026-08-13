@@ -62,11 +62,11 @@ status: Baseline
 
 | 检查项 | 级别 | 验证命令 |
 |--------|:----:|---------|
-| 新脚本语法 | MUST | `bash -n .harness/staging/<pattern>/extract-{pattern}.sh` |
+| 新脚本语法 | MUST | `bash -n project/staging/<pattern>/extract-{pattern}.sh` |
 | GP1-GP5 fixture 验证 | MUST | `bash scripts/gates/GP1-verify.sh` … `GP5-verify.sh` 依次 exit 0 |
 | 全量回归 | MUST | `bash scripts/tests/run.sh`（exit 0） |
 | 既有 fixture 不受影响 | MUST | `bash scripts/tests/run.sh` 输出中 http-client/mq/socket 样例通过 |
-| 持久化完整性 | MUST | `.harness/patterns/{pattern}.md` 存在 + `repos.yaml` scanner 已注册 + `EXTRACTION-WORKFLOW.md` 章节已更新 |
+| 持久化完整性 | MUST | `project/patterns/{pattern}.md` 存在 + `repos.yaml` scanner 已注册 + `EXTRACTION-WORKFLOW.md` 章节已更新 |
 | 新脚本注释含检测逻辑说明 | SHOULD | 人工审查 |
 
 ## §G-E5 图谱发布（E5 末）

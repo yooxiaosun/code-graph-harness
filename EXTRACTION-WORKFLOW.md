@@ -60,11 +60,10 @@ output/
 ### Script Roles
 
 ```
-.harness/extractors/*/extract.sh   # AI 产出物（提取器）
-.harness/fixtures/                 # 测试样本
+project/extractors/*/extract.sh   # AI 产出物（提取器）
+project/fixtures/                 # 测试样本
 scripts/base/                      # 原子能力 SDK（人维护）
 scripts/graph/
-  ├── build-nodes.sh               # Layer 1: 动态扫描协调所有提取器
   ├── build-edges.sh               # Layer 2: 提供者池 → 匹配 → 边 + 未解析
   ├── compute-stats.sh             # Layer 3: 5 项统计（bash 只算数，评级归 D2 AI）
   └── assemble-graph.sh            # 组装: nodes + edges → latest.json
@@ -91,18 +90,18 @@ scripts/pipeline.sh                # 主编排 (7 phase)
 
 | File | Content | Produced By |
 |------|---------|-------------|
-| `dubbo-provider.json` | Dubbo 提供侧接口 | `.harness/extractors/dubbo/extract.sh` |
-| `dubbo-consumer.json` | Dubbo 消费侧接口 | `.harness/extractors/dubbo/extract.sh` |
-| `sofarpc-provider.json` | SOFARPC 提供侧接口 | `.harness/extractors/sofarpc/extract.sh` |
-| `sofarpc-consumer.json` | SOFARPC 消费侧接口 | `.harness/extractors/sofarpc/extract.sh` |
-| `grpc-provider.json` | gRPC 提供侧接口 | `.harness/extractors/grpc/extract.sh` |
-| `grpc-consumer.json` | gRPC 消费侧接口 | `.harness/extractors/grpc/extract.sh` |
-| `rest-provider.json` | REST 提供侧接口 | `.harness/extractors/rest/extract.sh` |
-| `rest-consumer.json` | REST 消费侧接口 | `.harness/extractors/rest/extract.sh` |
-| `nonstandard-http.json` | HTTP 客户端调用 | `.harness/extractors/http-client/extract.sh` |
-| `nonstandard-mq.json` | MQ 交互 | `.harness/extractors/mq/extract.sh` |
-| `nonstandard-custom.json` | 自定义协议+未知模式 | `.harness/extractors/custom/extract.sh` |
-| `tags.json` | 业务标签 | `.harness/extractors/tags/extract.sh` |
+| `dubbo-provider.json` | Dubbo 提供侧接口 | `project/extractors/dubbo/extract.sh` |
+| `dubbo-consumer.json` | Dubbo 消费侧接口 | `project/extractors/dubbo/extract.sh` |
+| `sofarpc-provider.json` | SOFARPC 提供侧接口 | `project/extractors/sofarpc/extract.sh` |
+| `sofarpc-consumer.json` | SOFARPC 消费侧接口 | `project/extractors/sofarpc/extract.sh` |
+| `grpc-provider.json` | gRPC 提供侧接口 | `project/extractors/grpc/extract.sh` |
+| `grpc-consumer.json` | gRPC 消费侧接口 | `project/extractors/grpc/extract.sh` |
+| `rest-provider.json` | REST 提供侧接口 | `project/extractors/rest/extract.sh` |
+| `rest-consumer.json` | REST 消费侧接口 | `project/extractors/rest/extract.sh` |
+| `nonstandard-http.json` | HTTP 客户端调用 | `project/extractors/http-client/extract.sh` |
+| `nonstandard-mq.json` | MQ 交互 | `project/extractors/mq/extract.sh` |
+| `nonstandard-custom.json` | 自定义协议+未知模式 | `project/extractors/custom/extract.sh` |
+| `tags.json` | 业务标签 | `project/extractors/tags/extract.sh` |
 
 ### 2.4 Extraction Rules Per Protocol
 
@@ -113,7 +112,7 @@ scripts/pipeline.sh                # 主编排 (7 phase)
 ```
 查找对象: 所有 *.java 文件 (排除 /.git/ /target/ /build/)
 
-提供侧检测 (.harness/extractors/dubbo/extract.sh → dubbo-provider.json):
+提供侧检测 (project/extractors/dubbo/extract.sh → dubbo-provider.json):
   1. found_in_file "$file" "DubboService|com.alibaba.dubbo.config.annotation.Service|org.apache.dubbo.config.annotation.Service"
      ├─ 命中 → 提取所有 public 方法签名 (extract_methods)
      │        对每个方法生成 InterfaceNode:
@@ -127,7 +126,7 @@ scripts/pipeline.sh                # 主编排 (7 phase)
      ├─ extract_interface_impl → 获取 implements 接口列表
      └─ 无方法时: 生成一个以类名为粒度的节点
 
-消费侧检测 (.harness/extractors/dubbo/extract.sh → dubbo-consumer.json):
+消费侧检测 (project/extractors/dubbo/extract.sh → dubbo-consumer.json):
   1. found_in_file "$file" "DubboReference|com.alibaba.dubbo.config.annotation.Reference|org.apache.dubbo.config.annotation.Reference"
   2. extract_field_annotations "$file" "DubboReference"  /  "Reference"
      → 获取注解所在行的下一行: 字段声明
@@ -248,7 +247,7 @@ C. found_in_file "$file" "WebClient|OkHttpClient"
 #### 2.4.5 Nonstandard (3 extractors)
 
 ```
-.harness/extractors/http-client/extract.sh:
+project/extractors/http-client/extract.sh:
   对每个 java_file:
     if found_in_file "$file" "RestTemplate|OkHttpClient|HttpClient|WebClient":
       grep '.getForObject|.postForObject|.postForEntity|.getForEntity|.exchange|.execute('
@@ -256,7 +255,7 @@ C. found_in_file "$file" "WebClient|OkHttpClient"
       → 从 URL 解析目标 host: sed 's|https\?://||' | cut -d/ -f1
       → InterfaceNode (protocol="http")
 
-.harness/extractors/mq/extract.sh:
+project/extractors/mq/extract.sh:
   对每个 java_file:
     if found_in_file "$file" "KafkaProducer|KafkaConsumer|KafkaTemplate":
       grep '.send|.publish|.subscribe|.poll|.consume('
@@ -270,7 +269,7 @@ C. found_in_file "$file" "WebClient|OkHttpClient"
     if found_in_file "$file" "DefaultMQProducer|DefaultMQPushConsumer":
       → 同上
 
-.harness/extractors/custom/extract.sh:
+project/extractors/custom/extract.sh:
   对每个 java_file:
     if found_in_file "$file" "io\.netty":
       if found_in_file "ServerBootstrap":
@@ -291,7 +290,7 @@ C. found_in_file "$file" "WebClient|OkHttpClient"
 #### 2.4.6 Business Tags
 
 ```
-.harness/extractors/tags/extract.sh:
+project/extractors/tags/extract.sh:
   5 条并行链路:
 
   链 1: 自定义注解
@@ -719,9 +718,9 @@ Phase 1: Repository Preparation
 
 Phase 2: Node Extraction (Layer 1)
   → per service, parallel:
-    .harness/extractors/dubbo/extract.sh, sofarpc/, grpc/, rest/
-    .harness/extractors/http-client/extract.sh, mq/, custom/
-  → .harness/extractors/tags/extract.sh (serial, after all extractors)
+    project/extractors/dubbo/extract.sh, sofarpc/, grpc/, rest/
+    project/extractors/http-client/extract.sh, mq/, custom/
+  → project/extractors/tags/extract.sh (serial, after all extractors)
   → D1: 按 output/analysis/<service>-profile.yaml 选择提取器（无 profile 则全量）
   → [AI-REQUIRED] if unknown patterns detected
 
@@ -790,16 +789,16 @@ Q: Nonstandard extraction produces too many false positives?
 | `scripts/base/repo-manager.sh` | Git clone/update/change detection | 0 |
 | `scripts/base/java-parser.sh` | Java file scanning functions (atomic capability) | 1 |
 | `scripts/base/json-writer.sh` | JSON node/edge writing functions (atomic capability) | 1-3 |
-| `.harness/extractors/dubbo/extract.sh` | Dubbo interface extraction | 1 |
-| `.harness/extractors/sofarpc/extract.sh` | SOFARPC interface extraction | 1 |
-| `.harness/extractors/grpc/extract.sh` | gRPC interface extraction | 1 |
-| `.harness/extractors/rest/extract.sh` | REST API extraction | 1 |
-| `.harness/extractors/http-client/extract.sh` | HTTP client call extraction | 1 |
-| `.harness/extractors/mq/extract.sh` | MQ interaction extraction | 1 |
-| `.harness/extractors/custom/extract.sh` | Custom protocol + unknown detection | 1 |
+| `project/extractors/dubbo/extract.sh` | Dubbo interface extraction | 1 |
+| `project/extractors/sofarpc/extract.sh` | SOFARPC interface extraction | 1 |
+| `project/extractors/grpc/extract.sh` | gRPC interface extraction | 1 |
+| `project/extractors/rest/extract.sh` | REST API extraction | 1 |
+| `project/extractors/http-client/extract.sh` | HTTP client call extraction | 1 |
+| `project/extractors/mq/extract.sh` | MQ interaction extraction | 1 |
+| `project/extractors/custom/extract.sh` | Custom protocol + unknown detection | 1 |
 | `scripts/gates/GP1-5-verify.sh` | Nonstandard script verification | 1-validate |
-| `.harness/extractors/tags/extract.sh` | Business tag extraction | 1 |
-| `scripts/graph/build-nodes.sh` | Coordinate all Layer 1 extractors + D1 | 1 |
+| `project/extractors/tags/extract.sh` | Business tag extraction | 1 |
+| `scripts/pipeline.sh`（内联提取器遍历，EXTRACTORS_DIR） | Coordinate all Layer 1 extractors + D1 | 1 |
 | `scripts/graph/build-edges.sh` | Provider pool + consumer matching | 2 |
 | `scripts/graph/compute-stats.sh` | 5 stats checks (no rating, D2 AI rates) | 3 |
 | `scripts/graph/assemble-graph.sh` | Final graph assembly | Assemble |

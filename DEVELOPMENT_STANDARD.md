@@ -119,7 +119,7 @@
 ## §5 术语一致性
 
 - 项目 Agent 入口文件统一称为 **`HARNESS.md`**（vendor-neutral，内网不使用 claude 命名）
-- AI 产出物落在 `.harness/` 与 `output/`；框架资产落在 `scripts/` `templates/` `schemas/` `harness-conf/`
+- AI 产出物落在 `project/`（提取器/fixtures/rules/patterns/staging）与 `output/`；框架资产落在 `scripts/` `templates/` `schemas/` `harness-conf/`
 - 涉及"决策/策略/判断"的文档一律使用 `.md`；涉及"机械执行"的一律使用 `.sh`
 
 ---

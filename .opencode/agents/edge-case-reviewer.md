@@ -10,7 +10,7 @@ tools: Read, Grep, Glob, Bash, Write
 
 ## 评审对象
 
-`.harness/staging/<pattern>/`（即 project/staging/）的提取器交付包。
+`project/staging/<pattern>/`（即 project/staging/）的提取器交付包。
 
 ## 职责（MUST）
 
@@ -34,4 +34,4 @@ tools: Read, Grep, Glob, Bash, Write
 
 ## 写入边界
 
-- 仅 `.harness/staging/<pattern>/reviews/edge-case-review.md`
+- 仅 `project/staging/<pattern>/reviews/edge-case-review.md`

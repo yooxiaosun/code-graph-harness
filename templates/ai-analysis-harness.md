@@ -38,7 +38,7 @@ C_E1 证据底线（按场景分级）:
     fail_action: 丢弃
 
   技术不可识别节点 (evidence_type 为 *_unknown 或 dynamic_dispatch):
-    判定前提：Q-Evidence-2 = C (按 .harness/rules/ 规则库识别 ESB client)
+    判定前提：Q-Evidence-2 = C (按 project/rules/ 规则库识别 ESB client)
     required: evidence_refs.length = 0 允许 (但强制标注)
     特殊处理:
       - 节点 confidence 强制 = low
