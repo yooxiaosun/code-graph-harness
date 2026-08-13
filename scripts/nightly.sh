@@ -69,7 +69,12 @@ fi
 
 # 0.3 锁文件（防并发；超时 12h 自动失效）
 if [ -f "$LOCK_FILE" ]; then
-    LOCK_AGE=$(( $(date +%s) - $(stat -f %m "$LOCK_FILE" 2>/dev/null || echo 0) ))
+    if stat -c %Y "$LOCK_FILE" >/dev/null 2>&1; then
+        LOCK_MTIME=$(stat -c %Y "$LOCK_FILE")
+    else
+        LOCK_MTIME=$(stat -f %m "$LOCK_FILE" 2>/dev/null || echo 0)
+    fi
+    LOCK_AGE=$(( $(date +%s) - LOCK_MTIME ))
     if [ "${LOCK_AGE:-0}" -lt 43200 ]; then
         echo "[FATAL] 已有进行中任务（$LOCK_FILE 存在 ${LOCK_AGE}s）— 退出"
         exit 1
@@ -107,8 +112,8 @@ fi
 # ─────────────────────────────────────────────────────────────────────
 # 1. 初始化状态机（execution-mode: nightly）
 # ─────────────────────────────────────────────────────────────────────
-sed -i '' "s/^current-change: .*/current-change: nightly-$TODAY/" "$STATE_FILE"
-sed -i '' "s/^current-phase: .*/current-phase: E2/" "$STATE_FILE"
+sed -i "s/^current-change: .*/current-change: nightly-$TODAY/" "$STATE_FILE"
+sed -i "s/^current-phase: .*/current-phase: E2/" "$STATE_FILE"
 echo "- [$NOW] [E2] [started] nightly 模式启动（repos=${REPO_COUNT} 个）" >> docs/status/progress.md
 
 # ─────────────────────────────────────────────────────────────────────
@@ -271,8 +276,8 @@ fi
 # ─────────────────────────────────────────────────────────────────────
 # 6. 状态收口
 # ─────────────────────────────────────────────────────────────────────
-sed -i '' "s/^current-change: .*/current-change: null/" "$STATE_FILE"
-sed -i '' "s/^current-phase: .*/current-phase: null/" "$STATE_FILE"
+sed -i "s/^current-change: .*/current-change: null/" "$STATE_FILE"
+sed -i "s/^current-phase: .*/current-phase: null/" "$STATE_FILE"
 echo "- [$NOW] [归档] [completed] nightly 完成（门禁=${G_RESULT}），摘要见 $SUMMARY_FILE" >> docs/status/progress.md
 rm -f "$LOCK_FILE"
 

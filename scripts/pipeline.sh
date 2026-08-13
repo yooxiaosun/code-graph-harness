@@ -31,6 +31,16 @@ tool_phase() {
     esac
 }
 
+# 工具 → 安装命令（Linux/WSL 各发行版 + macOS）
+tool_install_hint() {
+    case "$1" in
+        jq)   echo "sudo apt-get install -y jq    # Debian/Ubuntu/WSL  |  sudo yum install -y jq (RHEL)  |  sudo dnf install -y jq (Fedora)  |  brew install jq (macOS)" ;;
+        node) echo "sudo apt-get install -y nodejs    # 或用 nvm: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash" ;;
+        git)  echo "sudo apt-get install -y git    # Debian/Ubuntu/WSL  |  brew install git (macOS)" ;;
+        *)    echo "请按发行版包管理器安装 $1" ;;
+    esac
+}
+
 # ─────────────────────────────────────────────────────────────────────
 # Phase 0: Dependency Check
 # ─────────────────────────────────────────────────────────────────────
@@ -41,13 +51,14 @@ for tool in git bash jq node; do
     if ! command -v "$tool" &>/dev/null; then
         PHASES=$(tool_phase "$tool")
         echo "  [WARN] Missing: $tool (impact: $PHASES)"
+        echo "  [HINT] $(tool_install_hint "$tool")"
         MISSING=$((MISSING + 1))
         MISSING_LIST="$MISSING_LIST $tool"
     fi
 done
 if [ "$MISSING" -gt 0 ]; then
     echo "  [FAIL] 关键依赖缺失（gate-criteria.md §G-E1 MUST）：$MISSING_LIST"
-    echo "  [FAIL] 请安装缺失工具后重试；缺失依赖将使后续阶段以无关报错形式失败"
+    echo "  [FAIL] 完整安装指引见 docs/SETUP.md；缺失依赖将使后续阶段以无关报错形式失败"
     exit 1
 fi
 [ "${BASH_VERSINFO[0]:-0}" -lt 4 ] && echo "  [WARN] Bash >=4 recommended (current: $BASH_VERSION)"
