@@ -76,7 +76,7 @@ echo "── GP3: JSON 有效性 ──"
 INVALID=0
 while IFS= read -r json_file; do
     [ -z "$json_file" ] && continue
-    if ! jq empty "$json_file" 2>/dev/null; then
+    if ! python3 -c "import json; json.load(open('$json_file'))" 2>/dev/null; then
         echo "  [FAIL] 非法 JSON: $json_file"
         INVALID=1
     fi
@@ -93,8 +93,8 @@ if [ -z "$ACTUAL_FILE" ]; then
     echo "  [FAIL] 无输出文件"
     fail "GP4 召回"
 else
-    EXPECTED_COUNT=$(jq 'length' "$EXPECTED_FILE" 2>/dev/null || echo 0)
-    ACTUAL_COUNT=$(jq 'length' "$ACTUAL_FILE" 2>/dev/null || echo 0)
+    EXPECTED_COUNT=$(python3 -c "import json; print(len(json.load(open('$EXPECTED_FILE'))))" 2>/dev/null || echo 0)
+    ACTUAL_COUNT=$(python3 -c "import json; print(len(json.load(open('$ACTUAL_FILE'))))" 2>/dev/null || echo 0)
     echo "  expected=$EXPECTED_COUNT actual=$ACTUAL_COUNT"
     if [ "$ACTUAL_COUNT" -ge "$EXPECTED_COUNT" ] 2>/dev/null; then
         echo "  [PASS] 召回满足期望"
@@ -119,8 +119,8 @@ while IFS='|' read -r proto sample expected; do
     R_TMP=$(mktemp -d)
     if bash "$EXTRACTOR" "test-service" "$SAMPLE" "$R_TMP" > "$R_TMP/run.log" 2>&1; then
         R_FILE=$(find "$R_TMP" -name "*.json" -type f | head -1)
-        R_EXPECTED=$(jq 'length' "$EXPECTED" 2>/dev/null || echo 0)
-        R_ACTUAL=$(jq 'length' "$R_FILE" 2>/dev/null || echo 0)
+        R_EXPECTED=$(python3 -c "import json; print(len(json.load(open('$EXPECTED'))))" 2>/dev/null || echo 0)
+        R_ACTUAL=$(python3 -c "import json; print(len(json.load(open('$R_FILE'))))" 2>/dev/null || echo 0)
         if [ "$R_ACTUAL" -ge "$R_EXPECTED" ] 2>/dev/null; then
             echo "  [PASS] ${proto}（${R_ACTUAL} >= ${R_EXPECTED}）"
         else

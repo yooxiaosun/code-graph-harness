@@ -7,6 +7,8 @@ US=$'\37'
 # Reads Layer 1 InterfaceNodes → provider_pool → consumer matching → edges + unresolved
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# jq 替代（无 jq 时 node 兜底）
+source "$SCRIPT_DIR/../base/json.sh"
 source "$SCRIPT_DIR/../base/json-writer.sh"
 
 NODES_DIR="${1:-output/nodes}"
@@ -46,9 +48,18 @@ while IFS= read -r provider_file; do
     service_name=$(echo "$provider_file" | sed 's|.*/nodes/||' | cut -d/ -f1)
     protocol=$(basename "$provider_file" | sed 's/-provider.json//')
 
-    jq -r --arg svc "$service_name" --arg proto "$protocol" '
-        .[] | [.id, .className, .name, $svc, $proto, .signature] | @tsv
-    ' "$provider_file" 2>/dev/null | while IFS=$'\t' read -r node_id class_name method_name svc proto signature; do
+    python3 -c "
+import sys, json
+try:
+    for x in json.load(open('$provider_file')):
+        if isinstance(x, dict):
+            nid = x.get('id','') or ''
+            cls = x.get('className','') or ''
+            name = x.get('name','') or ''
+            sig = x.get('signature','') or ''
+            print(f\"{nid}\t{cls}\t{name}\t$service_name\t$protocol\t{sig}\")
+except Exception:
+    pass" 2>/dev/null | while IFS=$'\t' read -r node_id class_name method_name svc proto signature; do
         [ -z "$class_name" ] && continue
         [ "$class_name" = "null" ] && continue
         echo "${class_name}${US}${node_id}${US}${svc}${US}${proto}${US}${method_name}${US}${signature}"
@@ -71,10 +82,10 @@ for consumer_file in $(find "$NODES_DIR" -name "*-consumer.json" -type f 2>/dev/
 
     while IFS= read -r consumer_obj; do
         [ -z "$consumer_obj" ] && continue
-        c_id=$(echo "$consumer_obj" | jq -r '.id // empty' 2>/dev/null)
-        c_class=$(echo "$consumer_obj" | jq -r '.className // empty' 2>/dev/null)
-        c_method=$(echo "$consumer_obj" | jq -r '.name // empty' 2>/dev/null)
-        c_path=$(echo "$consumer_obj" | jq -r '.path // empty' 2>/dev/null)
+        c_id=$(json_fromstr "$consumer_obj" .id)
+        c_class=$(json_fromstr "$consumer_obj" .className)
+        c_method=$(json_fromstr "$consumer_obj" .name)
+        c_path=$(json_fromstr "$consumer_obj" .path)
 
         [ -z "$c_id" ] && continue
         [ "$c_class" = "null" ] && c_class=""
@@ -120,7 +131,7 @@ UNR
             json_array_add "$UNRESOLVED_FILE" "$unresolved_obj" false
             UNRESOLVED_COUNT=$((UNRESOLVED_COUNT + 1))
         fi
-    done < <(jq -c '.[]' "$consumer_file" 2>/dev/null || true)
+    done < <(json_each "$consumer_file")
 done
 
 json_array_close "$RPC_EDGES_FILE"
@@ -137,12 +148,12 @@ for ns_file in $(find "$NODES_DIR" -name "nonstandard*.json" -type f 2>/dev/null
 
     while IFS= read -r ns_node; do
         [ -z "$ns_node" ] && continue
-        n_role=$(echo "$ns_node" | jq -r '.role // empty' 2>/dev/null)
-        n_id=$(echo "$ns_node" | jq -r '.id // empty' 2>/dev/null)
-        n_proto=$(echo "$ns_node" | jq -r '.protocol // empty' 2>/dev/null)
-        n_path=$(echo "$ns_node" | jq -r '.path // empty' 2>/dev/null)
-        n_http=$(echo "$ns_node" | jq -r '.httpPath // empty' 2>/dev/null)
-        n_sig=$(echo "$ns_node" | jq -r '.signature // empty' 2>/dev/null)
+        n_role=$(json_fromstr "$ns_node" .role)
+        n_id=$(json_fromstr "$ns_node" .id)
+        n_proto=$(json_fromstr "$ns_node" .protocol)
+        n_path=$(json_fromstr "$ns_node" .path)
+        n_http=$(json_fromstr "$ns_node" .httpPath)
+        n_sig=$(json_fromstr "$ns_node" .signature)
 
         [ -z "$n_id" ] && continue
 
@@ -206,7 +217,7 @@ for ns_file in $(find "$NODES_DIR" -name "nonstandard*.json" -type f 2>/dev/null
         ns_edge=$(edge_nonstandard_json "$n_id" "$target" "$n_proto" "$confidence" "$ns_svc" "$target" "$pattern" "$n_path" "$topic" "$host_pattern")
         json_array_add "$NS_EDGES_FILE" "$ns_edge" false
         NS_EDGE_COUNT=$((NS_EDGE_COUNT + 1))
-    done < <(jq -c '.[]' "$ns_file" 2>/dev/null || true)
+    done < <(json_each "$ns_file")
 done
 
 json_array_close "$NS_EDGES_FILE"

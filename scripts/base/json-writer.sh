@@ -116,8 +116,11 @@ json_tags_from_list() {
 
 validate_json() {
     local file="$1"
+    # 校验合法 JSON（node 兜底，不依赖 jq）
     if command -v jq &>/dev/null; then
         jq empty "$file" 2>/dev/null && return 0 || return 1
+    elif command -v node &>/dev/null; then
+        node -e "JSON.parse(require('fs').readFileSync('$file','utf8'))" 2>/dev/null && return 0 || return 1
     fi
     return 0
 }
@@ -135,6 +138,13 @@ merge_json_arrays() {
     local file1="$1" file2="$2" output="$3"
     if command -v jq &>/dev/null; then
         jq -s '.[0] + .[1]' <(cat "$file1" 2>/dev/null || echo "[]") <(cat "$file2" 2>/dev/null || echo "[]") > "$output"
+    elif command -v node &>/dev/null; then
+        node -e "
+const fs=require('fs');
+const a1=(()=>{try{return JSON.parse(fs.readFileSync('$file1','utf8'))}catch(e){return[]}})();
+const a2=(()=>{try{return JSON.parse(fs.readFileSync('$file2','utf8'))}catch(e){return[]}})();
+fs.writeFileSync('$output', JSON.stringify(a1.concat(a2)));
+" >/dev/null 2>&1
     else
         cat "$file1" "$file2" 2>/dev/null > "$output" || true
     fi

@@ -7,6 +7,8 @@ set -euo pipefail
 # bash 层不再硬编码评级。blockers 保留：provider 冲突是确定性数据事实，非判断。
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# jq 替代（无 jq 时 node 兜底）
+source "$SCRIPT_DIR/../base/json.sh"
 source "$SCRIPT_DIR/../base/json-writer.sh"
 
 NODES_DIR="${1:-output/nodes}"
@@ -29,11 +31,16 @@ A_DETAILS="[]"
 A_PASS=true
 
 if [ -f "$UNRESOLVED_FILE" ]; then
-    A_COUNT=$(jq '. | length' "$UNRESOLVED_FILE" 2>/dev/null || echo "0")
+    A_COUNT=$(json_len "$UNRESOLVED_FILE" 2>/dev/null || echo "0")
     if [ "$A_COUNT" -gt 0 ] 2>/dev/null; then
         A_PASS=false
         WARNINGS+=("$A_COUNT consumers have no matching provider (external service or extraction gap)")
-        A_DETAILS=$(jq '[.[].class_name] | group_by(.) | map({class: .[0], count: length})' "$UNRESOLVED_FILE" 2>/dev/null || echo "[]")
+        A_DETAILS=$(python3 -c "
+import sys, json
+d = json.load(open('$UNRESOLVED_FILE'))
+from collections import Counter
+c = Counter(x.get('class_name','') for x in d if isinstance(x, dict))
+print(json.dumps([{'class': k, 'count': v} for k, v in c.items()]))" 2>/dev/null || echo "[]")
     fi
 fi
 echo "    orphan_consumers: $A_COUNT"
@@ -43,7 +50,7 @@ echo "  [B] Provider conflicts..."
 B_COUNT=0
 B_PASS=true
 
-if command -v jq &>/dev/null; then
+if [ -d "$NODES_DIR" ]; then
     CONFLICTS=$(mktemp)
     CALIBPROV=$(mktemp)
     trap 'rm -f "$CONFLICTS" "$CALIBPROV"' EXIT
@@ -53,9 +60,15 @@ if command -v jq &>/dev/null; then
         p_svc=$(echo "$provider_file" | sed 's|.*/nodes/||' | cut -d/ -f1)
         p_proto=$(basename "$provider_file" | sed 's/-provider.json//')
 
-        jq -r --arg svc "$p_svc" --arg proto "$p_proto" '
-            .[] | [.className, $svc, $proto, .id] | @tsv
-        ' "$provider_file" 2>/dev/null || true
+        python3 -c "
+import sys, json
+try:
+    d = json.load(open('$provider_file'))
+    for x in d:
+        if isinstance(x, dict) and x.get('className'):
+            print(f\"{x['className']}\t$p_svc\t$p_proto\t{x.get('id','')}\")
+except Exception:
+    pass" 2>/dev/null || true
     done | sort -t$'\t' -k1 > "$CALIBPROV"
 
     B_COUNT=$(awk -F'\t' '
@@ -80,10 +93,22 @@ if [ -f "$EDGES_DIR/rpc-edges.json" ]; then
     ALL_EDGE_TOS=$(mktemp)
 
     for pf in $(find "$NODES_DIR" -name "*-provider.json" -type f 2>/dev/null || true); do
-        jq -r '.[].id' "$pf" 2>/dev/null || true
+        python3 -c "
+import sys, json
+try:
+    for x in json.load(open('$pf')):
+        if isinstance(x, dict) and x.get('id'): print(x['id'])
+except Exception:
+    pass" 2>/dev/null || true
     done | sort -u > "$ALL_PROVIDER_IDS"
 
-    jq -r '.[].to' "$EDGES_DIR/rpc-edges.json" 2>/dev/null | sort -u > "$ALL_EDGE_TOS"
+    python3 -c "
+import sys, json
+try:
+    for x in json.load(open('$EDGES_DIR/rpc-edges.json')):
+        if isinstance(x, dict) and x.get('to'): print(x['to'])
+except Exception:
+    pass" 2>/dev/null | sort -u > "$ALL_EDGE_TOS"
 
     C_COUNT=$(comm -23 "$ALL_PROVIDER_IDS" "$ALL_EDGE_TOS" 2>/dev/null | wc -l | tr -d ' ')
 
@@ -101,12 +126,22 @@ D_LOW_CONF=0
 D_ACCEPTED=0
 
 if [ -f "$EDGES_DIR/nonstandard-edges.json" ]; then
-    D_NEEDS_REVIEW=$(jq '[.[] | select(.confidence < 0.5)] | length' "$EDGES_DIR/nonstandard-edges.json" 2>/dev/null || echo "0")
-    D_LOW_CONF=$(jq '[.[] | select(.confidence >= 0.5 and .confidence < 0.7)] | length' "$EDGES_DIR/nonstandard-edges.json" 2>/dev/null || echo "0")
-    D_ACCEPTED=$(jq '[.[] | select(.confidence >= 0.7)] | length' "$EDGES_DIR/nonstandard-edges.json" 2>/dev/null || echo "0")
+    # 注: v2.1 起 confidence 为字符串（high/medium/low），count by level
+    D_NEEDS_REVIEW=$(python3 -c "
+import sys, json
+d = json.load(open('$EDGES_DIR/nonstandard-edges.json'))
+print(sum(1 for x in d if isinstance(x, dict) and x.get('confidence') == 'low'))" 2>/dev/null || echo "0")
+    D_LOW_CONF=$(python3 -c "
+import sys, json
+d = json.load(open('$EDGES_DIR/nonstandard-edges.json'))
+print(sum(1 for x in d if isinstance(x, dict) and x.get('confidence') == 'medium'))" 2>/dev/null || echo "0")
+    D_ACCEPTED=$(python3 -c "
+import sys, json
+d = json.load(open('$EDGES_DIR/nonstandard-edges.json'))
+print(sum(1 for x in d if isinstance(x, dict) and x.get('confidence') == 'high'))" 2>/dev/null || echo "0")
 
     if [ "$D_NEEDS_REVIEW" -gt 0 ] 2>/dev/null; then
-        WARNINGS+=("$D_NEEDS_REVIEW nonstandard edges need manual review (confidence < 0.5)")
+        WARNINGS+=("$D_NEEDS_REVIEW nonstandard edges need manual review (confidence=low)")
     fi
 fi
 echo "    needs_review: $D_NEEDS_REVIEW, low: $D_LOW_CONF, accepted: $D_ACCEPTED"
@@ -118,9 +153,9 @@ E_MATCHED="0"
 E_TOTAL="0"
 
 if [ -f "$EDGES_DIR/edge-stats.json" ]; then
-    E_SCORE=$(jq -r '.match_rate' "$EDGES_DIR/edge-stats.json" 2>/dev/null || echo "0")
-    E_MATCHED=$(jq -r '.matched' "$EDGES_DIR/edge-stats.json" 2>/dev/null || echo "0")
-    E_TOTAL=$(jq -r '.total_consumers' "$EDGES_DIR/edge-stats.json" 2>/dev/null || echo "0")
+    E_SCORE=$(json_getdef "$EDGES_DIR/edge-stats.json" match_rate 0 2>/dev/null || echo "0")
+    E_MATCHED=$(json_getdef "$EDGES_DIR/edge-stats.json" matched 0 2>/dev/null || echo "0")
+    E_TOTAL=$(json_getdef "$EDGES_DIR/edge-stats.json" total_consumers 0 2>/dev/null || echo "0")
 fi
 echo "    score: $E_SCORE (rating deferred to D2 AI decision)"
 

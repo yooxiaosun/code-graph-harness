@@ -62,7 +62,7 @@ done
 echo "==== Nightly Extraction $(date -u +"%Y-%m-%dT%H:%M:%SZ") ===="
 
 # 0.1 工具依赖
-for tool in git bash jq; do
+for tool in git bash node python3; do
     if ! command -v "$tool" &>/dev/null; then
         echo "[FATAL] Missing tool: $tool"
         exit 1
@@ -168,7 +168,7 @@ else
 fi
 
 # G-E5: 图谱结构（jq 可解析 + 关键字段）
-if jq -e '.stats and .nodes and .edges' output/knowledge-graph/latest.json > /dev/null 2>&1; then
+if python3 -c "import json; d=json.load(open('output/knowledge-graph/latest.json')); exit(0 if all(k in d for k in ('stats','nodes','edges')) else 1)" >/dev/null 2>&1; then
     echo "  [PASS] G-E5 图谱发布结构"
 else
     G_RESULT="FAIL"; G_NOTES="${G_NOTES}G-E5图谱结构异常; "
@@ -260,10 +260,10 @@ fi
     echo "- G-E1: $(bash "$SCRIPT_DIR/gates/G0-verify.sh" > /dev/null 2>&1 && echo PASS || echo FAIL)"
     echo "- G-E2: $([ "$PIPELINE_EXIT" -eq 0 ] && [ -f output/knowledge-graph/latest.json ] && echo PASS || echo FAIL)"
     echo "- G-E3: $([ "$GE3_EXIT" -eq 0 ] && echo PASS || echo FAIL)"
-    echo "- G-E5: $(jq -e '.stats and .nodes and .edges' output/knowledge-graph/latest.json > /dev/null 2>&1 && echo PASS || echo FAIL)"
+    echo "- G-E5: $(python3 -c "import json; d=json.load(open('output/knowledge-graph/latest.json')); exit(0 if all(k in d for k in ('stats','nodes','edges')) else 1)" >/dev/null 2>&1 && echo PASS || echo FAIL)"
     echo ""
     echo "## 图谱统计"
-    jq '.stats' output/knowledge-graph/latest.json 2>/dev/null || echo "（无 stats）"
+    python3 -c "import json; d=json.load(open('output/knowledge-graph/latest.json')); print(d.get('stats', '（无 stats）'))" 2>/dev/null || echo "（无 stats）"
     if [ "$AI_MODE" != "off" ] || [ -n "$AI_DEGRADED" ]; then
         echo ""
         echo "## AI 驱动"

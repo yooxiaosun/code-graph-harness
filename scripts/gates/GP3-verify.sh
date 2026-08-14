@@ -13,8 +13,8 @@ fi
 
 echo "── GP3: Output Schema Validation ──"
 
-if ! command -v jq &>/dev/null; then
-    echo "[SKIP] jq not available, cannot validate JSON schema"
+if ! command -v python3 &>/dev/null; then
+    echo "[SKIP] python3 not available, cannot validate JSON schema"
     exit 0
 fi
 
@@ -53,7 +53,7 @@ fi
 FAILURES=0
 while IFS= read -r json_file; do
     [ -z "$json_file" ] && continue
-    if ! jq empty "$json_file" 2>/dev/null; then
+    if ! python3 -c "import json; json.load(open('$json_file'))" 2>/dev/null; then
         echo "[FAIL] Invalid JSON: $json_file"
         FAILURES=$((FAILURES + 1))
     fi

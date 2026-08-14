@@ -49,7 +49,7 @@ tool_install_hint() {
 run_phase "0" "Dependency Check"
 MISSING=0
 MISSING_LIST=""
-for tool in git bash jq node; do
+for tool in git bash node python3; do
     if ! command -v "$tool" &>/dev/null; then
         PHASES=$(tool_phase "$tool")
         echo "  [WARN] Missing: $tool (impact: $PHASES)"
@@ -58,6 +58,13 @@ for tool in git bash jq node; do
         MISSING_LIST="$MISSING_LIST $tool"
     fi
 done
+# jq 为可选（node 兜底，见 scripts/base/json.sh）
+if ! command -v jq &>/dev/null && ! command -v node &>/dev/null; then
+    echo "  [WARN] Missing: jq (JSON processing, node 兜底也可)"
+    echo "  [HINT] $(tool_install_hint jq)"
+    MISSING=$((MISSING + 1))
+    MISSING_LIST="$MISSING_LIST jq"
+fi
 if [ "$MISSING" -gt 0 ]; then
     echo "  [FAIL] 关键依赖缺失（gate-criteria.md §G-E1 MUST）：$MISSING_LIST"
     echo "  [FAIL] 完整安装指引见 docs/SETUP.md；缺失依赖将使后续阶段以无关报错形式失败"
@@ -183,11 +190,23 @@ echo ""
 run_phase "7" "Summary"
 END_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 echo "  Completed: $END_TIMESTAMP"
-if [ -f "$GRAPH_DIR/latest.json" ] && command -v jq &>/dev/null; then
+if [ -f "$GRAPH_DIR/latest.json" ]; then
     echo "  Stats:"
-    jq '.stats' "$GRAPH_DIR/latest.json" 2>/dev/null || echo "  [no stats]"
+    python3 -c "
+import json
+try:
+    d = json.load(open('$GRAPH_DIR/latest.json'))
+    print('   ', d.get('stats', '  [no stats]'))
+except Exception:
+    print('  [no stats]')" 2>/dev/null
     echo "  Calibration:"
-    jq '{score: .calibrationScore, rating: .calibrationRating}' "$GRAPH_DIR/latest.json" 2>/dev/null || true
+    python3 -c "
+import json
+try:
+    d = json.load(open('$GRAPH_DIR/latest.json'))
+    print('   ', {'score': d.get('calibrationScore'), 'rating': d.get('calibrationRating')})
+except Exception:
+    pass" 2>/dev/null
 fi
 echo ""
 echo "==== Pipeline Complete ===="

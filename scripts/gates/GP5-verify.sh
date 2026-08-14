@@ -27,8 +27,8 @@ fi
 INVALID_COUNT=0
 while IFS= read -r baseline_file; do
     [ -z "$baseline_file" ] && continue
-    if command -v jq &>/dev/null; then
-        if ! jq empty "$baseline_file" 2>/dev/null; then
+    if command -v python3 &>/dev/null; then
+        if ! python3 -c "import json; json.load(open('$baseline_file'))" 2>/dev/null; then
             echo "[FAIL] Baseline file corrupted: $baseline_file"
             INVALID_COUNT=$((INVALID_COUNT + 1))
         fi

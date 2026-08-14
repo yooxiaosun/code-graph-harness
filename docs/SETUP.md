@@ -9,7 +9,7 @@
 |------|------|:---:|---------|:---:|
 | `git` | 克隆/更新仓库（Phase 1） | ✅ | 无法获取仓库 | 内网 git 服务 |
 | `bash` | 全部脚本解释器 | ✅ | 工程不可运行 | 系统自带 |
-| `jq` | JSON 处理（Phase 2-4、门禁） | ✅ | 13 个脚本 ABORT | **项目实例自带 jq 多平台包 `project/tools/dist/`（§2.6）** |
+| `jq` | JSON 处理（可选，node 兜底） | ⚠️ 建议 | 无 jq 时 node 兜底（见 §5） | **项目实例自带 jq 多平台包 `project/tools/dist/`（§2.6）** |
 | `node` | JSON 解析、extractors、opencode | ✅ | pipeline Phase 0 硬检查失败 | npm 代理镜像 |
 | `python3` | YAML 解析（run-ai-analysis / GE2.5） | ✅ | AI 迭代分析驱动失效 | 系统包 / 离线 |
 | `curl` | nightly 模式 Ollama 调用 | ⚠️ 仅 nightly --ai | AI 归因功能不可用 | 系统自带 |
@@ -139,4 +139,5 @@ bash scripts/pipeline.sh
   - 内网 WSL/Linux/macOS/Windows：项目实例自带多平台包 `project/tools/dist/`，用 `install-jq.sh` 自动识别安装
   - macOS 开发机：也可系统 jq（`brew install jq`）
   - 优先级：系统 jq > 项目自带包（install-jq.sh 仅在系统无 jq 时使用）
+- **jq 可选（node 兜底）**：`scripts/base/json.sh` 统一封装，有 jq 用 jq（高性能），无 jq 自动用 node；所有脚本已改造为不硬依赖 jq
 - 无需 jq 之外的任何 JSON 专用工具（node 可全量替代）

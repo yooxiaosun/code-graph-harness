@@ -14,6 +14,10 @@
 # 退出码: 0=通过, 1=校验失败, 2=用法错误
 set -uo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# jq 替代（无 jq 时 node 兜底）
+source "$SCRIPT_DIR/json.sh"
+
 JSON_FILE="${1:-}"
 KIND="${2:-}"
 REPO_PATH="${3:-}"
@@ -28,26 +32,21 @@ if [ ! -f "$JSON_FILE" ]; then
     exit 1
 fi
 
-if ! command -v jq &>/dev/null; then
-    echo "[ABORT] jq not available"
-    exit 1
-fi
-
 FAILURES=0
 fail() { echo "  [FAIL] $1"; FAILURES=$((FAILURES + 1)); }
 
 # 1. 合法 JSON 数组
-if ! jq -e 'type == "array"' "$JSON_FILE" >/dev/null 2>&1; then
+if ! json_is_array "$JSON_FILE"; then
     echo "[FAIL] not a JSON array: $JSON_FILE"
     exit 1
 fi
 
-COUNT=$(jq 'length' "$JSON_FILE")
+COUNT=$(json_len "$JSON_FILE")
 echo "[VALIDATE-SCHEMA] $KIND: $COUNT item(s) in $JSON_FILE"
 [ "$COUNT" -eq 0 ] && { echo "[PASS] empty array"; exit 0; }
 
 # 2-7. 逐项校验
-TOTAL=$(jq 'length' "$JSON_FILE")
+TOTAL=$(json_len "$JSON_FILE")
 i=0
 while [ "$i" -lt "$TOTAL" ]; do
     IDX="$i"
@@ -57,51 +56,48 @@ while [ "$i" -lt "$TOTAL" ]; do
     else
         REQUIRED="from,to,type,protocol,fromService,toService,confidence,evidence_refs,evidence_type,source"
     fi
-    MISSING=$(jq -r --argjson i "$IDX" --arg r "$REQUIRED" '
-        $r | split(",") | map(select((.[0:1] != ".") and (.[$i]) == null)) | join(",")
-    ' "$JSON_FILE" 2>/dev/null || echo "PARSE")
     # 简化：直接检查每个必填字段
     MISSING=""
     for fld in ${REQUIRED//,/ }; do
-        if ! jq -e --argjson i "$IDX" ".[\$i] | has(\"$fld\")" "$JSON_FILE" >/dev/null 2>&1; then
+        if ! json_has "$JSON_FILE" "$IDX" "$fld"; then
             MISSING="$MISSING $fld"
         fi
     done
     [ -n "$MISSING" ] && fail "item[$IDX] missing fields:$MISSING"
 
     # confidence 枚举
-    CONF=$(jq -r --argjson i "$IDX" '.[$i].confidence // ""' "$JSON_FILE")
+    CONF=$(json_itemfield "$JSON_FILE" "$IDX" "confidence")
     case "$CONF" in
         high|medium|low) ;;
         *) fail "item[$IDX] invalid confidence: '$CONF' (must be high/medium/low)" ;;
     esac
 
     # evidence_type 枚举
-    ET=$(jq -r --argjson i "$IDX" '.[$i].evidence_type // ""' "$JSON_FILE")
+    ET=$(json_itemfield "$JSON_FILE" "$IDX" "evidence_type")
     case "$ET" in
         source_reference|declaration_reference|call_site|provider_declaration_only|consumer_reference_only|endpoint_declaration_only|esb_integration_unknown|custom_protocol_unknown|dynamic_dispatch) ;;
         *) fail "item[$IDX] invalid evidence_type: '$ET'" ;;
     esac
 
     # evidence_refs 非空 + 无 tier=4
-    REFS=$(jq -r --argjson i "$IDX" '.[$i].evidence_refs | length' "$JSON_FILE" 2>/dev/null || echo "0")
+    REFS=$(json_itemfield "$JSON_FILE" "$IDX" "evidence_refs" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d))" 2>/dev/null || echo "0")
     if [ "$REFS" -lt 1 ]; then
         fail "item[$IDX] evidence_refs empty (C-E1)"
     else
-        TIER4=$(jq -r --argjson i "$IDX" '[.[$i].evidence_refs[].tier] | map(select(. == 4)) | length' "$JSON_FILE" 2>/dev/null || echo "0")
+        TIER4=$(json_itemfield "$JSON_FILE" "$IDX" "evidence_refs" | python3 -c "import sys,json; print(sum(1 for r in json.load(sys.stdin) if r.get('tier')==4))" 2>/dev/null || echo "0")
         [ "$TIER4" -gt 0 ] && fail "item[$IDX] has $TIER4 tier=4 evidence (C-E1 hard constraint)"
     fi
 
     # *_only → boundary_external = true
     case "$ET" in
         provider_declaration_only|consumer_reference_only|endpoint_declaration_only)
-            BE=$(jq -r --argjson i "$IDX" '.[$i].metadata.boundary_external // false' "$JSON_FILE" 2>/dev/null || echo "false")
+            BE=$(json_itemfield "$JSON_FILE" "$IDX" "metadata.boundary_external" 2>/dev/null || echo "false")
             [ "$BE" != "true" ] && fail "item[$IDX] evidence_type=$ET but metadata.boundary_external != true"
             ;;
     esac
 
     # source 枚举
-    SRC=$(jq -r --argjson i "$IDX" '.[$i].source // ""' "$JSON_FILE")
+    SRC=$(json_itemfield "$JSON_FILE" "$IDX" "source")
     case "$SRC" in
         bash|ai|dual) ;;
         *) fail "item[$IDX] invalid source: '$SRC'" ;;
@@ -110,14 +106,17 @@ while [ "$i" -lt "$TOTAL" ]; do
     # 8. 路径存在性 (传 repo-path 时)
     if [ -n "$REPO_PATH" ]; then
         if [ "$KIND" = "node" ]; then
-            P=$(jq -r --argjson i "$IDX" '.[$i].path' "$JSON_FILE" 2>/dev/null || true)
+            P=$(json_itemfield "$JSON_FILE" "$IDX" "path" 2>/dev/null || true)
             if [ -n "$P" ] && [ "$P" != "null" ]; then
                 PFILE="${P%%:*}"
                 [ ! -f "$REPO_PATH/$PFILE" ] && fail "item[$IDX] path file not found: $REPO_PATH/$PFILE"
             fi
         fi
         # evidence source_path 存在性
-        jq -r --argjson i "$IDX" '.[$i].evidence_refs[].source_path' "$JSON_FILE" 2>/dev/null | while IFS= read -r ep; do
+        json_itemfield "$JSON_FILE" "$IDX" "evidence_refs" 2>/dev/null | python3 -c "import sys,json
+for r in json.load(sys.stdin):
+    p=r.get('source_path','')
+    if p: print(p)" 2>/dev/null | while IFS= read -r ep; do
             [ -z "$ep" ] && continue
             EPFILE="${ep%%:*}"
             [ ! -f "$REPO_PATH/$EPFILE" ] && echo "  [FAIL] item[$IDX] evidence file not found: $REPO_PATH/$EPFILE"

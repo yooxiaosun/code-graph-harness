@@ -4,6 +4,8 @@ set -euo pipefail
 # Assemble: Take Layer 1 nodes + Layer 2 edges + Layer 3 calibration → final graph
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# jq 替代（无 jq 时 node 兜底）
+source "$SCRIPT_DIR/../base/json.sh"
 source "$SCRIPT_DIR/../base/json-writer.sh"
 
 NODES_DIR="${1:-output/nodes}"
@@ -90,7 +92,7 @@ for service_dir in "$NODES_DIR"/*/; do
                 rest) REST_COUNT=$((REST_COUNT + 1)) ;;
                 http|mq|custom) NS_COUNT=$((NS_COUNT + 1)) ;;
             esac
-        done < <(jq -c '.[]' "$json_file" 2>/dev/null || true)
+        done < <(json_each "$json_file")
     done
 done
 
@@ -100,7 +102,7 @@ if [ -f "$EDGES_DIR/rpc-edges.json" ]; then
         [ -z "$edge" ] && continue
         add_edge "$edge"
         TOTAL_EDGES=$((TOTAL_EDGES + 1))
-    done < <(jq -c '.[]' "$EDGES_DIR/rpc-edges.json" 2>/dev/null || true)
+    done < <(json_each "$EDGES_DIR/rpc-edges.json")
 fi
 
 # ── Nonstandard Edges ──
@@ -109,7 +111,7 @@ if [ -f "$EDGES_DIR/nonstandard-edges.json" ]; then
         [ -z "$edge" ] && continue
         add_edge "$edge"
         TOTAL_EDGES=$((TOTAL_EDGES + 1))
-    done < <(jq -c '.[]' "$EDGES_DIR/nonstandard-edges.json" 2>/dev/null || true)
+    done < <(json_each "$EDGES_DIR/nonstandard-edges.json")
 fi
 
 # Close arrays
@@ -120,8 +122,8 @@ echo "]" >> "$TMP_EDGES"
 CAL_SCORE=0
 CAL_RATING="UNKNOWN"
 if [ -f "$CALIBRATION_DIR/calibration-report.json" ]; then
-    CAL_SCORE=$(jq -r '.overallScore // 0' "$CALIBRATION_DIR/calibration-report.json" 2>/dev/null || echo "0")
-    CAL_RATING=$(jq -r '.rating // "UNKNOWN"' "$CALIBRATION_DIR/calibration-report.json" 2>/dev/null || echo "UNKNOWN")
+    CAL_SCORE=$(json_getdef "$CALIBRATION_DIR/calibration-report.json" overallScore 0)
+    CAL_RATING=$(json_getdef "$CALIBRATION_DIR/calibration-report.json" rating UNKNOWN)
 fi
 
 # ── Stats ──

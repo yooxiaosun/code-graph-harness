@@ -52,8 +52,8 @@ if [ -z "$ACTUAL_FILE" ]; then
     exit 1
 fi
 
-EXPECTED_COUNT=$(jq 'length' "$EXPECTED_FILE" 2>/dev/null || echo "0")
-ACTUAL_COUNT=$(jq 'length' "$ACTUAL_FILE" 2>/dev/null || echo "0")
+EXPECTED_COUNT=$(python3 -c "import json; print(len(json.load(open('$EXPECTED_FILE'))))" 2>/dev/null || echo "0")
+ACTUAL_COUNT=$(python3 -c "import json; print(len(json.load(open('$ACTUAL_FILE'))))" 2>/dev/null || echo "0")
 
 echo "  Expected items: $EXPECTED_COUNT, Actual items: $ACTUAL_COUNT"
 
