@@ -63,7 +63,7 @@
 | 工程设计 v2 | `harness-conf/DESIGN-V2.md` |
 | 开发规范 | `DEVELOPMENT_STANDARD.md` |
 | 环境准备 | `docs/SETUP.md` |
-| 内网 jq | `project/tools/jq`（静态二进制，见 SETUP.md §2.6） |
+| 内网 jq | `project/tools/dist/`（多平台包，`install-jq.sh` 自动安装，见 SETUP.md §2.6） |
 | 主编排脚本 | `scripts/pipeline.sh` |
 | 仓库与协议配置 | `repos.yaml` |
 | 全局状态机 | `docs/status/state.yaml` |

@@ -9,7 +9,7 @@
 |------|------|:---:|---------|:---:|
 | `git` | 克隆/更新仓库（Phase 1） | ✅ | 无法获取仓库 | 内网 git 服务 |
 | `bash` | 全部脚本解释器 | ✅ | 工程不可运行 | 系统自带 |
-| `jq` | JSON 处理（Phase 2-4、门禁） | ✅ | 13 个脚本 ABORT | **项目实例自带 `project/tools/jq`（§2.6）** |
+| `jq` | JSON 处理（Phase 2-4、门禁） | ✅ | 13 个脚本 ABORT | **项目实例自带 jq 多平台包 `project/tools/dist/`（§2.6）** |
 | `node` | JSON 解析、extractors、opencode | ✅ | pipeline Phase 0 硬检查失败 | npm 代理镜像 |
 | `python3` | YAML 解析（run-ai-analysis / GE2.5） | ✅ | AI 迭代分析驱动失效 | 系统包 / 离线 |
 | `curl` | nightly 模式 Ollama 调用 | ⚠️ 仅 nightly --ai | AI 归因功能不可用 | 系统自带 |
@@ -64,33 +64,43 @@ wsl --install
 ### 2.6 离线安装 jq（内网无外网）
 
 > **md-first（D12）**：harness 不写自动引导胶水，只在 md 声明"环境需 jq"。
-> 项目实例自带 `project/tools/jq` **Linux x86-64 静态二进制**（v1.7.1，单文件，零依赖），
-> 由 AI 或运维按需安装到系统 PATH。
+> 项目实例自带 **jq 1.7.1 全平台静态二进制包**（`project/tools/dist/`，零依赖），
+> 由 AI 或运维按需安装到系统 PATH。详见 `project/tools/README.md`。
 
-**用法一（项目自带二进制，全局安装）**：
+**用法一（推荐，自动识别平台）**：
 
 ```bash
-# 从项目实例把 jq 拷到系统 PATH
-sudo install -m 755 /Users/johnsmith/WorkBench/code-graph/project/tools/jq /usr/local/bin/jq
+# 从项目实例的 jq 包自动检测当前平台并安装到 /usr/local/bin/jq
+bash /Users/johnsmith/WorkBench/code-graph/project/tools/install-jq.sh
 jq --version      # jq-1.7.1
 ```
 
-**用法二（从外网下载覆盖/升级）**：在内网有外网通道的机器下载官方静态二进制，覆盖 `project/tools/jq`：
+**用法二（手动，按平台选择）**：`project/tools/dist/` 提供 6 个平台二进制：
+
+| 平台 | 二进制 | 命令 |
+|------|--------|------|
+| WSL/Linux x86-64 | `jq-linux-amd64` | `sudo install -m 755 project/tools/dist/jq-linux-amd64 /usr/local/bin/jq` |
+| WSL/Linux ARM64 | `jq-linux-arm64` | 同上，换 `jq-linux-arm64` |
+| macOS Apple Silicon | `jq-macos-arm64` | 同上，换 `jq-macos-arm64` |
+| macOS Intel | `jq-macos-amd64` | 同上，换 `jq-macos-amd64` |
+| Windows | `jq-windows-amd64.exe` | 复制到 PATH 目录，改名 `jq.exe` |
+
+**用法三（从外网下载覆盖/升级）**：在内网有外网通道的机器下载官方静态二进制，覆盖 `project/tools/dist/`：
 
 ```bash
 # 确认架构
 uname -m                       # x86_64 → jq-linux-amd64; aarch64 → jq-linux-arm64
 
 # x86_64（绝大多数 WSL）：
-wget -O /Users/johnsmith/WorkBench/code-graph/project/tools/jq https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64
+wget -O project/tools/dist/jq-linux-amd64 https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64
 # ARM64（M 芯片 Mac 上的 WSL）：
-wget -O /Users/johnsmith/WorkBench/code-graph/project/tools/jq https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-arm64
-chmod +x /Users/johnsmith/WorkBench/code-graph/project/tools/jq
+wget -O project/tools/dist/jq-linux-arm64 https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-arm64
+chmod +x project/tools/dist/jq-linux-*
 ```
 
-> **说明**：`project/tools/jq` 是 Linux x86-64 静态二进制，仅用于内网 WSL/Linux 运行时。
-> macOS 开发机请用系统自带 jq（`brew install jq`）。环境要求由 `pipeline.sh` Phase 0
-> 检查，缺失时打印安装命令并指向本 §2.6。
+> **说明**：`project/tools/dist/` 是 jq 官方预编译**静态链接**二进制（Linux/macOS/Windows 全覆盖），
+> 仅用于内网 WSL/Linux/macOS 运行时。环境要求由 `pipeline.sh` Phase 0 检查，
+> 缺失时打印安装命令并指向本 §2.6。
 
 ## 3. 验证清单
 
@@ -116,18 +126,17 @@ bash scripts/pipeline.sh
 
 | 现象 | 原因 | 处理 |
 |------|------|------|
-| `[FAIL] 关键依赖缺失: jq` | jq 未装到系统 PATH | 见 §2.6（用 project/tools/jq 或下载） |
-| `[JQ-BOOTSTRAP] 系统无 jq, 已启用工程自带 tools/jq` | 系统无 jq，bootstrap 自动注入 tools/jq | 正常提示，无需处理 |
+| `[FAIL] 关键依赖缺失: jq` | jq 未装到系统 PATH | 见 §2.6（用 `project/tools/install-jq.sh` 或手动安装） |
 | nightly 状态不更新 | 旧版脚本用 macOS `sed -i ''` | 拉取最新代码（已修复为 GNU `sed -i`） |
 | `python3: command not found` | python3 未装 | `sudo apt-get install -y python3` |
 | 文件行尾错乱 | 未用 LF 行尾 | `.gitattributes` 已强制 `eol=lf`，重新 clone 即可 |
 
-## 5. 跨平台说明（v2.3）
+## 5. 跨平台说明（v3.0）
 
 - 工程脚本按 **Linux/WSL（GNU coreutils）** 编写：`sed -i`、`stat -c %Y`
 - 仍保留少量 BSD/macOS 兜底（`json-writer.sh` sed 双写、`nightly.sh` stat 双写），macOS 开发可用
-- **jq 来源策略（v2.3）**：
-  - macOS 开发机：系统 jq（`brew install jq`）
-  - 内网 WSL/Linux：工程自带 `tools/jq`（静态二进制，`jq-bootstrap.sh` 自动发现）
-  - 优先级：系统 jq > 工程 tools/jq（bootstrap 尊重系统环境）
+- **jq 来源策略（v3.0）**：
+  - 内网 WSL/Linux/macOS/Windows：项目实例自带多平台包 `project/tools/dist/`，用 `install-jq.sh` 自动识别安装
+  - macOS 开发机：也可系统 jq（`brew install jq`）
+  - 优先级：系统 jq > 项目自带包（install-jq.sh 仅在系统无 jq 时使用）
 - 无需 jq 之外的任何 JSON 专用工具（node 可全量替代）
